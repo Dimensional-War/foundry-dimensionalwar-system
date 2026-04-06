@@ -1,0 +1,41 @@
+{
+  "id": "dimensionalwar",
+  "title": "Dimensional War",
+  "description": "Dimensional War's system.",
+  "version": "This is auto replaced",
+  "compatibility": {
+    "minimum": 11,
+    "verified": 11
+  },
+  "authors": [
+    {
+      "name": "Daedalus11069"
+    }
+  ],
+  "scripts": ["dev-env.js"],
+  "styles": ["src/dimensionalwar.css"],
+  "packs": [],
+  "documentTypes": {
+    "Actor": {
+      "Pc": {},
+      "Npc": {},
+      "Ally": {},
+      "Enemy": {},
+      "Boss": {}
+    },
+    "Item": {
+      "spell": {}
+    }
+  },
+  "socket": true,
+  "initiative": "1d@system.statistics.awareness.value",
+  "grid": {
+    "distance": 5,
+    "units": "ft"
+  },
+  "primaryTokenAttribute": "resources.hp",
+  "secondaryTokenAttribute": "resources.mp",
+  "url": "This is auto replaced",
+  "manifest": "This is auto replaced",
+  "download": "This is auto replaced"
+}

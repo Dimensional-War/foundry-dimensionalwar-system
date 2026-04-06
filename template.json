@@ -1,0 +1,127 @@
+{
+  "Actor": {
+    "types": ["character", "ally", "enemy", "boss", "pc", "npc"],
+    "templates": {
+      "common": {
+        "resources": {
+          "hp": {
+            "min": 0,
+            "value": 0,
+            "max": 0
+          },
+          "mp": {
+            "min": 0,
+            "value": 0,
+            "max": 0
+          }
+        }
+      },
+      "character": {
+        "templates": ["common"],
+        "statistics": {
+          "health": { "value": 0, "min": 0 },
+          "awareness": { "value": 0, "min": 0 },
+          "dexterity": { "value": 0, "min": 0 },
+          "strength": { "value": 0, "min": 0 },
+          "spirit": { "value": 0, "min": 0 },
+          "luck": { "value": 0, "min": 0 }
+        },
+        "skills": {
+          "movement": {
+            "Acrobatics": { "min": 0, "max": 10, "value": 0 },
+            "Athletics": { "min": 0, "max": 10, "value": 0 },
+            "Reaction": { "min": 0, "max": 10, "value": 0 },
+            "Swimming": { "min": 0, "max": 10, "value": 0 }
+          },
+          "utility": {
+            "Computer Use": { "min": 0, "max": 10, "value": 0 },
+            "Concentration": { "min": 0, "max": 10, "value": 0 },
+            "Disguise": { "min": 0, "max": 10, "value": 0 },
+            "Gather Info": { "min": 0, "max": 10, "value": 0 },
+            "Linguistics / Decryption": { "min": 0, "max": 10, "value": 0 },
+            "Perception": { "min": 0, "max": 10, "value": 0 },
+            "Search": { "min": 0, "max": 10, "value": 0 },
+            "Speechcraft": { "min": 0, "max": 10, "value": 0 },
+            "Stealth": { "min": 0, "max": 10, "value": 0 },
+            "Subterfuge": { "min": 0, "max": 10, "value": 0 },
+            "Monster Training": { "min": 0, "max": 10, "value": 0 }
+          },
+          "combat": {
+            "Assault Rifles": { "min": 0, "max": 10, "value": 0 },
+            "Axes / Hammer": { "min": 0, "max": 10, "value": 0 },
+            "Bows": { "min": 0, "max": 10, "value": 0 },
+            "Breath Weapon": [],
+            "Chakram": { "min": 0, "max": 10, "value": 0 },
+            "Clubs / Maces": { "min": 0, "max": 10, "value": 0 },
+            "Daggers": { "min": 0, "max": 10, "value": 0 },
+            "Heavy Weapons": { "min": 0, "max": 10, "value": 0 },
+            "Martial Arts": { "min": 0, "max": 10, "value": 0 },
+            "Pistols": { "min": 0, "max": 10, "value": 0 },
+            "Polearms": { "min": 0, "max": 10, "value": 0 },
+            "Scythes": { "min": 0, "max": 10, "value": 0 },
+            "Shields": { "min": 0, "max": 10, "value": 0 },
+            "Shotguns": { "min": 0, "max": 10, "value": 0 },
+            "Sniper Rifles": { "min": 0, "max": 10, "value": 0 },
+            "Staves / Swallows": { "min": 0, "max": 10, "value": 0 },
+            "Submachine Guns / Carbines": { "min": 0, "max": 10, "value": 0 },
+            "Swords": { "min": 0, "max": 10, "value": 0 },
+            "Throwing Weapons": { "min": 0, "max": 10, "value": 0 },
+            "Whips / Flails": { "min": 0, "max": 10, "value": 0 }
+          },
+          "magic": {
+            "Alchemy": { "min": 0, "max": 10, "value": 0 },
+            "Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Assisted Magic": { "min": 0, "max": 10, "value": 0 },
+            "Bardic Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Blue Magic": { "min": 0, "max": 10, "value": 0 },
+            "Divine Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Druidic Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Ether / Technomancy": { "min": 0, "max": 10, "value": 0 },
+            "Force Sensitivity": { "min": 0, "max": 10, "value": 0 },
+            "Necromancy": { "min": 0, "max": 10, "value": 0 },
+            "Runic Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Summoning": { "min": 0, "max": 10, "value": 0 },
+            "Weapon Arcana": { "min": 0, "max": 10, "value": 0 },
+            "Cryokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Electrokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Geokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Gyrokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Ipsokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Photokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Pyrokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Sonokinesis": { "min": 0, "max": 10, "value": 0 },
+            "Telekinesis": { "min": 0, "max": 10, "value": 0 },
+            "Telepathy / Psychokinesis": { "min": 0, "max": 10, "value": 0 }
+          },
+          "artisan": {
+            "Arcane Science": { "min": 0, "max": 10, "value": 0 },
+            "Blacksmithing": { "min": 0, "max": 10, "value": 0 },
+            "Botany": { "min": 0, "max": 10, "value": 0 },
+            "Cooking": { "min": 0, "max": 10, "value": 0 },
+            "Engineering": { "min": 0, "max": 10, "value": 0 },
+            "Medicine": { "min": 0, "max": 10, "value": 0 },
+            "Performance": { "min": 0, "max": 10, "value": 0 },
+            "Writing": { "min": 0, "max": 10, "value": 0 }
+          },
+          "fieldTraining": {
+            "First Aid": { "min": 0, "max": 10, "value": 0 },
+            "Survival": { "min": 0, "max": 10, "value": 0 },
+            "Vehicle Operation": []
+          }
+        }
+      },
+      "ally": {
+        "templates": ["character"],
+        "customs": []
+      },
+      "enemy": {
+        "templates": ["common"],
+        "customs": []
+      },
+      "boss": {
+        "templates": ["common"],
+        "customs": []
+      }
+    }
+  }
+}

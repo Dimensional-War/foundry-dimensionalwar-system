@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<head>
+  <title>Pusher Test</title>
+  <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+  <script>
+    // Enable pusher logging - don't include this in production
+    Pusher.logToConsole = true;
+
+    var pusher = new Pusher("ca8e4386dcfaefe79951", {
+      cluster: "us2",
+      channelAuthorization: {
+        endpoint:
+          "http://chargen.localhost.com/wsauth/auth-pusher/authorize?user_name=DragonBot&token=OwvA2G0XM1kKgHoRr9RiiKBzw7Xd151Y"
+      }
+    });
+
+    var channel = pusher.subscribe("private-foundry-roll-dice");
+    function sendMsg() {
+      channel.trigger("client-do-roll-dice", {
+        target: "#dae'slake",
+        nick: "Daedalus",
+        roll: `1d1000+10 reasoning goes here`
+      });
+    }
+  </script>
+</head>
+<body>
+  <h1>Pusher Test</h1>
+  <div>
+    <button onclick="sendMsg()">Test</button>
+  </div>
+</body>

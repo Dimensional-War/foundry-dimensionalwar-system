@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../data/dw"
+		},
+		{
+			"path": "../foundry-rifts-palladium"
+		}
+	],
+	"settings": {}
+}

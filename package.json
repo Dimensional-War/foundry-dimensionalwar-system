@@ -1,0 +1,41 @@
+{
+  "private": true,
+  "name": "foundry-dimensionalwar-system",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.26.7",
+    "@tanker/file-reader": "^4.3.0",
+    "@vueuse/core": "^12.5.0",
+    "@vueuse/integrations": "^12.5.0",
+    "eval-estree-expression": "^2.0.3",
+    "file-saver": "^2.0.5",
+    "flowbite": "^3.1.2",
+    "focus-trap": "^7.6.4",
+    "lodash-es": "^4.17.21",
+    "nanoid": "^5.0.9",
+    "pusher-js": "^8.4.0",
+    "tailwindcss": "^4.0.4",
+    "vue": "^3.5.13",
+    "vue-draggable-plus": "^0.6.0"
+  },
+  "devDependencies": {
+    "@league-of-foundry-developers/foundry-vtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#v11.315.0-beta",
+    "@tailwindcss/postcss": "^4.0.3",
+    "@tailwindcss/vite": "^4.0.3",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "postcss-import": "^16.1.0",
+    "postcss-nested": "^7.0.2",
+    "sass-embedded": "^1.83.4",
+    "vite": "6.0.1",
+    "vite-plugin-generate-file": "^0.2.0",
+    "vite-plugin-static-copy": "^2.2.0"
+  }
+}
