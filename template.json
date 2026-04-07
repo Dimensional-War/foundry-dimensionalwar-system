@@ -1,6 +1,5 @@
 {
   "Actor": {
-    "types": ["character", "ally", "enemy", "boss", "pc", "npc"],
     "templates": {
       "common": {
         "resources": {

@@ -1,10 +1,9 @@
-const { ArrayField, HTMLField, NumberField, SchemaField, StringField } =
-  foundry.data.fields;
-
 import { ActorDataModel } from "./BaseDataModels";
 
+const { ArrayField, SchemaField, StringField } = foundry.data.fields;
+
 export class EnemyDataModel extends ActorDataModel {
-  static defineSchema() {
+  static override defineSchema(): foundry.data.fields.DataSchema {
     return {
       ...super.defineSchema(),
       rolls: new ArrayField(

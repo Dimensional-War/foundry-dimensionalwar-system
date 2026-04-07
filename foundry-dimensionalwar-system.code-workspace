@@ -4,10 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../../data/dw"
+			"path": "../foundry-rifts-palladium"
 		},
 		{
-			"path": "../foundry-rifts-palladium"
+			"path": "../../../foundry-dw-csb-functions"
 		}
 	],
 	"settings": {}

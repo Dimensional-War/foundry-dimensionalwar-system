@@ -4,9 +4,20 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run unlink-dev && npm run link-dev && vite",
+    "dev-remote": "npm run unlink-dev && npm run link-dev && vite --port 30001",
     "build": "vite build",
-    "preview": "vite preview"
+    "build-prod": "npm run build-packs && npm run build",
+    "build-preview": "vite build --mode staging",
+    "auto-build": "node auto-build.cjs",
+    "preview": "vite preview",
+    "preview-remote": "npm run unlink-dev && npm run link-dev-dist && vite preview --port 30001",
+    "typecheck": "vue-tsc --noEmit",
+    "postinstall": "patch-package",
+    "sloc": "npx sloc src --format cli-table --exclude packs",
+    "link-dev": "./linkDevEnv.bat",
+    "link-dev-dist": "./linkDevEnvDist.bat",
+    "unlink-dev": "./unlinkDevEnv.bat"
   },
   "dependencies": {
     "@babel/parser": "^7.26.7",
@@ -25,17 +36,24 @@
     "vue-draggable-plus": "^0.6.0"
   },
   "devDependencies": {
-    "@league-of-foundry-developers/foundry-vtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#v11.315.0-beta",
+    "@primevue/auto-import-resolver": "^4.5.4",
     "@tailwindcss/postcss": "^4.0.3",
-    "@tailwindcss/vite": "^4.0.3",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-vue": "^6.0.5",
     "autoprefixer": "^10.4.20",
+    "fvtt-types": "github:League-of-Foundry-Developers/foundry-vtt-types#v13.345.1",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.1",
     "postcss-import": "^16.1.0",
     "postcss-nested": "^7.0.2",
     "sass-embedded": "^1.83.4",
-    "vite": "6.0.1",
+    "typescript": "^5.7.0",
+    "unplugin-vue-components": "^32.0.0",
+    "vite": "^8.0.5",
     "vite-plugin-generate-file": "^0.2.0",
-    "vite-plugin-static-copy": "^2.2.0"
+    "vite-plugin-static-copy": "^4.0.1",
+    "vite-plugin-zip-pack": "^1.2.4",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vue-tsc": "^2.2.0"
   }
 }

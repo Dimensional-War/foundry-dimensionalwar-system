@@ -1,6 +1,6 @@
 import { nanoid, customAlphabet } from "nanoid";
 
-const useId = () => {
+const useId = (): string => {
   return (
     customAlphabet(
       "abcdefghijklmnopqrstuvwxyz" + "abcdefghijklmnopqrstuvwxyz".toUpperCase(),

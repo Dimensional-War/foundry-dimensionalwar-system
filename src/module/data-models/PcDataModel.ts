@@ -1,16 +1,7 @@
-const {
-  ArrayField,
-  BooleanField,
-  HTMLField,
-  NumberField,
-  SchemaField,
-  StringField
-} = foundry.data.fields;
-
 import { CharacterDataModel, defineSchemaCustoms } from "./BaseDataModels";
 
 export class PcDataModel extends CharacterDataModel {
-  static defineSchema() {
+  static override defineSchema(): foundry.data.fields.DataSchema {
     return {
       ...super.defineSchema(),
       customs: defineSchemaCustoms()

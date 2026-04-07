@@ -1,10 +1,7 @@
-const { HTMLField, NumberField, SchemaField, StringField } =
-  foundry.data.fields;
-
 import { CharacterDataModel, defineSchemaCustoms } from "./BaseDataModels";
 
-export class NpcDataModel extends CharacterDataModel {
-  static defineSchema() {
+export class AllyDataModel extends CharacterDataModel {
+  static override defineSchema(): foundry.data.fields.DataSchema {
     return {
       ...super.defineSchema(),
       customs: defineSchemaCustoms()

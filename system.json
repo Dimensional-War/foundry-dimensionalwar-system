@@ -4,8 +4,8 @@
   "description": "Dimensional War's system.",
   "version": "This is auto replaced",
   "compatibility": {
-    "minimum": 11,
-    "verified": 11
+    "minimum": 13,
+    "verified": 13
   },
   "authors": [
     {
@@ -17,11 +17,11 @@
   "packs": [],
   "documentTypes": {
     "Actor": {
-      "Pc": {},
-      "Npc": {},
-      "Ally": {},
-      "Enemy": {},
-      "Boss": {}
+      "pc": {},
+      "npc": {},
+      "ally": {},
+      "enemy": {},
+      "boss": {}
     },
     "Item": {
       "spell": {}

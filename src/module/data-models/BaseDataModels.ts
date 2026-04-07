@@ -1,16 +1,11 @@
-const {
-  ArrayField,
-  BooleanField,
-  HTMLField,
-  NumberField,
-  ObjectField,
-  SchemaField,
-  StringField
-} = foundry.data.fields;
+const { ArrayField, BooleanField, NumberField, SchemaField, StringField } =
+  foundry.data.fields;
 
 const { TypeDataModel } = foundry.abstract;
 
-function defineSchemaStatistic(milestones = []) {
+type MilestoneEntry = [name: string, description: string];
+
+function defineSchemaStatistic(milestones: MilestoneEntry[] = []) {
   return new SchemaField({
     value: new NumberField({
       required: true,
@@ -19,14 +14,17 @@ function defineSchemaStatistic(milestones = []) {
       initial: 0
     }),
     milestones: new SchemaField(
-      milestones.reduce((carry, current) => {
+      milestones.reduce<
+        Record<
+          string,
+          foundry.data.fields.SchemaField<foundry.data.fields.DataSchema>
+        >
+      >((carry, current) => {
         carry[current[0]] = new SchemaField({
           name: new StringField({ initial: current[0], readonly: true }),
           description: new StringField({ initial: current[1], readonly: true }),
           attribute: new StringField(),
-          value: new NumberField({
-            min: 0
-          })
+          value: new NumberField({ min: 0 })
         });
         return carry;
       }, {})
@@ -40,51 +38,72 @@ function defineSchemaStatistic(milestones = []) {
   });
 }
 
-function defineSchemaSkills(names = []) {
+type SimpleSkillName = string;
+
+interface SkillWithSpecifier {
+  name: string;
+  specifier: string;
+  label?: string;
+  choices?: string[];
+  descriptor?: string;
+}
+
+type SkillWithStatistics = [name: string, statistics: string[]];
+
+type SkillDefinition =
+  | SimpleSkillName
+  | SkillWithSpecifier
+  | SkillWithStatistics;
+
+function defineSchemaSkills(names: SkillDefinition[] = []) {
   return new SchemaField(
-    names.reduce((carry, name) => {
-      let skillName = name;
-      if (typeof name === "object") {
-        skillName = name.name;
-      }
-      const skillObj = {
-        level: new NumberField({
-          required: true,
-          integer: true,
-          min: 0,
-          max: 10,
-          initial: 0
-        })
-      };
-      if (!Array.isArray(name) && typeof name === "object" && name.specifier) {
-        const stringFieldObj = {
-          required: true,
-          label: name.label
-        };
-        if (name.choices) {
-          stringFieldObj.choices = name.choices;
-        }
-        skillObj.specifier = new StringField(stringFieldObj);
-        if (name.descriptor) {
-          skillObj.descriptor = new StringField({
+    names.reduce<Record<string, foundry.data.fields.DataField>>(
+      (carry, name) => {
+        const skillObj: Record<string, foundry.data.fields.DataField> = {
+          level: new NumberField({
             required: true,
-            label: name.descriptor
-          });
+            integer: true,
+            min: 0,
+            initial: 0
+          } as never)
+        };
+
+        if (Array.isArray(name)) {
+          // SkillWithStatistics: [skillName, statistics[]]
+          const [skillName, statistics] = name;
+          skillObj.statistics = new ArrayField(
+            new SchemaField({
+              name: new StringField({ required: true, choices: statistics })
+            })
+          );
+          carry[skillName] = new SchemaField(skillObj);
+        } else if (typeof name === "object") {
+          // SkillWithSpecifier
+          const skillName = name.name;
+          const stringFieldOptions: Record<string, unknown> = {
+            required: true,
+            label: name.label
+          };
+          if (name.choices) {
+            stringFieldOptions.choices = name.choices;
+          }
+          skillObj.specifier = new StringField(stringFieldOptions as never);
+          if (name.descriptor) {
+            skillObj.descriptor = new StringField({
+              required: true,
+              label: name.descriptor
+            } as never);
+          }
+          carry[skillName] = new ArrayField(new SchemaField(skillObj));
+        } else {
+          // SimpleSkillName
+          carry[name] = new SchemaField(skillObj);
         }
-        carry[skillName] = new ArrayField(new SchemaField(skillObj));
-      } else if (Array.isArray(name)) {
-        const [skillName, statistics] = name;
-        skillObj.statistics = new ArrayField(
-          new SchemaField({
-            name: new StringField({ required: true, choices: statistics })
-          })
-        );
-        carry[skillName] = new SchemaField(skillObj);
-      } else {
-        carry[skillName] = new SchemaField(skillObj);
-      }
-      return carry;
-    }, {})
+
+        return carry;
+      },
+      {}
+    )
   );
 }
 
@@ -119,8 +138,12 @@ export function defineSchemaCustoms() {
   );
 }
 
-export class ActorDataModel extends TypeDataModel {
-  static defineSchema() {
+export class ActorDataModel extends TypeDataModel<
+  foundry.data.fields.DataSchema,
+  // @ts-expect-error - Document.Any namespace issue with this version of fvtt-types
+  Document.Any
+> {
+  static override defineSchema(): foundry.data.fields.DataSchema {
     return {
       statistics: new SchemaField({
         health: defineSchemaStatistic([
@@ -195,7 +218,7 @@ export class ActorDataModel extends TypeDataModel {
           ]
         ])
       }),
-      resouces: new SchemaField({
+      resources: new SchemaField({
         hp: new SchemaField({
           min: new NumberField({
             required: true,
@@ -235,6 +258,170 @@ export class ActorDataModel extends TypeDataModel {
           })
         })
       }),
+      combat: new SchemaField({
+        emp: new BooleanField({ required: true, initial: false }),
+        defenseEffect: new StringField({
+          required: true,
+          initial: "no_effect",
+          choices: ["no_effect", "protect", "shell", "wall", "shield"]
+        }),
+        braceType: new StringField({
+          required: true,
+          initial: "no_brace",
+          choices: ["no_brace", "brace", "half_brace"]
+        }),
+        unsoakable: new BooleanField({ required: true, initial: false }),
+        damageType: new StringField({
+          required: true,
+          initial: "0",
+          choices: ["0", "1"]
+        }),
+        damage: new StringField({ required: false, initial: "0" })
+      }),
+      soak: new SchemaField({
+        physicalBase: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        magicalBase: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        armoredPhysical: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        armoredMagical: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        shield: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        shieldHitsLeft: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        shieldHitsMax: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        })
+      }),
+      gauges: new SchemaField({
+        hasTrance: new BooleanField({ required: true, initial: false }),
+        trance: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        hasLimitBreak: new BooleanField({ required: true, initial: false }),
+        limitBreak: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
+        multiplier: new NumberField({ required: true, min: 0, initial: 1 })
+      }),
+      elements: new SchemaField({
+        element1Name: new StringField({
+          required: true,
+          initial: "no_element"
+        }),
+        element1Level: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          max: 5,
+          initial: 0
+        }),
+        element2Name: new StringField({
+          required: true,
+          initial: "no_element"
+        }),
+        element2Level: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          max: 5,
+          initial: 0
+        }),
+        selectedElement1Name: new StringField({
+          required: true,
+          initial: "no_element"
+        }),
+        selectedElement1Level: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          max: 10,
+          initial: 0
+        }),
+        selectedElement2Name: new StringField({
+          required: true,
+          initial: "no_element"
+        }),
+        selectedElement2Level: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          max: 10,
+          initial: 0
+        })
+      }),
+      armors: new ArrayField(
+        new SchemaField({
+          name: new StringField({ required: true, initial: "" }),
+          physicalSoak: new NumberField({
+            required: true,
+            integer: true,
+            min: 0,
+            initial: 0
+          }),
+          magicalSoak: new NumberField({
+            required: true,
+            integer: true,
+            min: 0,
+            initial: 0
+          }),
+          shield: new NumberField({
+            required: true,
+            integer: true,
+            min: 0,
+            initial: 0
+          }),
+          shieldHitsMax: new NumberField({
+            required: true,
+            integer: true,
+            min: 0,
+            initial: 0
+          }),
+          hasEmp: new BooleanField({ required: true, initial: false }),
+          equipped: new BooleanField({ required: true, initial: false })
+        })
+      ),
+      actionHistory: new ArrayField(
+        new SchemaField({
+          name: new StringField({ required: true, initial: "" }),
+          changes: new StringField({ required: true, initial: "[]" })
+        })
+      ),
       rolls: new ArrayField(
         new SchemaField({
           category: new StringField({
@@ -260,7 +447,7 @@ export class ActorDataModel extends TypeDataModel {
 }
 
 export class CharacterDataModel extends ActorDataModel {
-  static defineSchema() {
+  static override defineSchema(): foundry.data.fields.DataSchema {
     return {
       ...super.defineSchema(),
       skills: new SchemaField({

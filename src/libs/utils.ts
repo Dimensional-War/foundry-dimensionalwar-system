@@ -1,11 +1,9 @@
 import { isRef, toRaw, toValue } from "vue";
 import { isObject } from "@vueuse/core";
 
-const stringToIdentifier = str => {
-  // Replace invalid characters with underscores and remove leading/trailing underscores
+const stringToIdentifier = (str: string): string => {
   let identifier = str.replace(/[^a-zA-Z0-9_$]/g, "").replace(/^_+|_+$/g, "");
 
-  // Ensure the identifier doesn't start with a number
   if (/^[0-9]/.test(identifier)) {
     identifier = "_" + identifier;
   }
@@ -17,7 +15,7 @@ const stringToIdentifier = str => {
   return identifier;
 };
 
-function deepUnref(val) {
+function deepUnref(val: unknown): unknown {
   const checkedVal = toValue(val);
   if (Array.isArray(checkedVal)) {
     return unrefArray(checkedVal);
@@ -25,18 +23,21 @@ function deepUnref(val) {
   if (!isObject(checkedVal)) {
     return checkedVal;
   }
-  return unrefObject(checkedVal);
+  return unrefObject(checkedVal as Record<string, unknown>);
 }
-function smartUnref(val) {
+
+function smartUnref(val: unknown): unknown {
   if (val !== null && !isRef(val) && typeof val === "object")
     return deepUnref(val);
   return toRaw(toValue(val));
 }
-function unrefArray(arr) {
-  arr.map(smartUnref);
+
+function unrefArray(arr: unknown[]): unknown[] {
+  return arr.map(smartUnref);
 }
-function unrefObject(obj) {
-  const unreffed = {};
+
+function unrefObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const unreffed: Record<string, unknown> = {};
   Object.keys(obj).forEach(key => {
     unreffed[key] = smartUnref(obj[key]);
   });
