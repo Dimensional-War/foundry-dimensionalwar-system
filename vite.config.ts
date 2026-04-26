@@ -101,8 +101,6 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: resolve(__dirname + "/dist"),
     sourcemap: true,
-    // Use esbuild for minification but preserve function/class names for Foundry compatibility
-    minify: "esbuild",
     target: ["es2022"],
     manifest: true, // Generate manifest.json for hashed filenames
     lib: {
@@ -185,8 +183,8 @@ export default defineConfig(({ mode }) => ({
     ...(mode === "production"
       ? viteStaticCopy({
           targets: [
-            { src: "src/module/templates", dest: "" },
-            { src: "lang", dest: "" }
+            // { src: "src/module/templates", dest: "" },
+            // { src: "lang", dest: "" }
             // { src: "packs", dest: "" }
           ]
         })

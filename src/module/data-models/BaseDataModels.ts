@@ -65,6 +65,11 @@ function defineSchemaSkills(names: SkillDefinition[] = []) {
             integer: true,
             min: 0,
             initial: 0
+          } as never),
+          bonus: new NumberField({
+            required: true,
+            integer: true,
+            initial: 0
           } as never)
         };
 
@@ -456,6 +461,13 @@ export class CharacterDataModel extends ActorDataModel {
           ["Athletics", ["strength", "dexterity"]],
           ["Reaction", ["awareness"]],
           ["Swimming", ["strength", "dexterity"]]
+        ]),
+        senses: defineSchemaSkills([
+          ["Sight", ["awareness"]],
+          ["Hearing", ["awareness"]],
+          ["Smell", ["awareness"]],
+          ["Taste", ["awareness"]],
+          ["Touch", ["awareness"]]
         ]),
         utility: defineSchemaSkills([
           ["Computer Use", ["spirit"]],

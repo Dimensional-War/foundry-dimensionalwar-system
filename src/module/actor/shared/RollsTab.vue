@@ -1,84 +1,118 @@
 <template>
   <div class="dw-rolls-tab">
-    <div class="dw-rolls-list">
-      <div v-for="(entry, idx) in system.rolls" :key="idx" class="dw-roll-row">
-        <select
-          :value="entry.category"
-          @change="
-            saveRoll(
-              idx,
-              'category',
-              ($event.target as HTMLSelectElement).value
-            )
-          "
-          class="dw-select"
-        >
-          <option v-for="cat in categories" :key="cat" :value="cat">
-            {{ cat }}
-          </option>
-        </select>
-        <select
-          :value="entry.type"
-          @change="
-            saveRoll(idx, 'type', ($event.target as HTMLSelectElement).value)
-          "
-          class="dw-select dw-select-sm"
-        >
-          <option value="die">Die</option>
-          <option value="skill">Skill</option>
-        </select>
-        <input
-          type="text"
-          class="dw-input-text"
-          :value="entry.bonusFormula"
-          @change="
-            saveRoll(
-              idx,
-              'bonusFormula',
-              ($event.target as HTMLInputElement).value
-            )
-          "
-          placeholder="Formula (e.g. 1d20)"
-        />
-        <input
-          type="number"
-          class="dw-input-num"
-          :value="entry.bonusNumber"
-          @change="
-            saveRoll(
-              idx,
-              'bonusNumber',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
-          placeholder="Bonus"
-        />
-        <input
-          type="text"
-          class="dw-input-text"
-          :value="entry.reasonBase"
-          @change="
-            saveRoll(
-              idx,
-              'reasonBase',
-              ($event.target as HTMLInputElement).value
-            )
-          "
-          placeholder="Reason"
-        />
-        <button class="dw-btn" @click="doRoll(idx)" title="Roll">🎲</button>
-        <button
-          class="dw-btn dw-btn-danger"
-          @click="removeRoll(idx)"
-          title="Remove"
-        >
-          ✕
-        </button>
+    <div class="border rounded">
+      <div v-for="(entry, idx) in system.rolls" :key="idx" class="border-b p-2">
+        <div class="flex flex-wrap gap-1">
+          <div class="basis-1/4">
+            <select
+              :value="entry.category"
+              @change="
+                saveRoll(
+                  idx,
+                  'category',
+                  ($event.target as HTMLSelectElement).value
+                )
+              "
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option v-for="cat in categories" :key="cat" :value="cat">
+                {{ cat }}
+              </option>
+            </select>
+          </div>
+          <div class="basis-1/6">
+            <select
+              :value="entry.type"
+              @change="
+                saveRoll(
+                  idx,
+                  'type',
+                  ($event.target as HTMLSelectElement).value
+                )
+              "
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="die">Die</option>
+              <option value="skill">Skill</option>
+            </select>
+          </div>
+          <div class="basis-1/6">
+            <input
+              type="text"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="entry.bonusFormula"
+              @change="
+                saveRoll(
+                  idx,
+                  'bonusFormula',
+                  ($event.target as HTMLInputElement).value
+                )
+              "
+              placeholder="Formula (e.g. 1d20)"
+            />
+          </div>
+          <div class="w-16">
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="entry.bonusNumber"
+              @change="
+                saveRoll(
+                  idx,
+                  'bonusNumber',
+                  Number(($event.target as HTMLInputElement).value)
+                )
+              "
+              placeholder="Bonus"
+            />
+          </div>
+          <div class="basis-1/4">
+            <input
+              type="text"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="entry.reasonBase"
+              @change="
+                saveRoll(
+                  idx,
+                  'reasonBase',
+                  ($event.target as HTMLInputElement).value
+                )
+              "
+              placeholder="Reason"
+            />
+          </div>
+          <div class="w-auto">
+            <button
+              type="button"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              @click="doRoll(idx)"
+              :title="'Roll'"
+            >
+              🎲
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 border border-red-600 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer transition-colors ml-1"
+              @click="removeRoll(idx)"
+              :title="'Remove'"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="dw-row">
-      <button class="dw-btn" @click="addRoll">+ Add Roll</button>
+    <div class="flex flex-wrap gap-1 my-2">
+      <div class="flex-1">
+        <button
+          type="button"
+          class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+          @click="addRoll"
+        >
+          + Add Roll
+        </button>
+      </div>
     </div>
   </div>
 </template>

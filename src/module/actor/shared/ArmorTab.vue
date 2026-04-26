@@ -1,131 +1,169 @@
 <template>
   <div class="dw-armor-tab">
     <!-- Shield hits tracker -->
-    <div class="dw-row">
-      <span class="dw-label">Shield Hits Left:</span>
-      <input
-        type="number"
-        class="dw-input-num"
-        :value="system.soak.shieldHitsLeft"
-        @change="
-          save(
-            'soak.shieldHitsLeft',
-            Number(($event.target as HTMLInputElement).value)
-          )
-        "
-        min="0"
-      />
+    <div class="flex flex-wrap gap-1 my-2">
+      <div class="w-auto font-bold">Shield Hits Left:</div>
+      <div class="basis-1/6">
+        <input
+          type="number"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          :value="system.soak.shieldHitsLeft"
+          @change="
+            save(
+              'soak.shieldHitsLeft',
+              Number(($event.target as HTMLInputElement).value)
+            )
+          "
+          min="0"
+        />
+      </div>
     </div>
 
     <!-- Armor List -->
-    <div class="dw-armor-table">
-      <div class="dw-armor-header">
-        <span>Name</span>
-        <span>P.Soak</span>
-        <span>M.Soak</span>
-        <span>Shield</span>
-        <span>Shield Max</span>
-        <span>EMP</span>
-        <span>Equipped</span>
-        <span></span>
+    <div class="border rounded">
+      <div class="border-b p-2">
+        <div class="flex font-bold">
+          <div class="basis-1/4">Name</div>
+          <div class="flex-1">P.Soak</div>
+          <div class="flex-1">M.Soak</div>
+          <div class="flex-1">Shield</div>
+          <div class="flex-1">Shield Max</div>
+          <div class="w-16">EMP</div>
+          <div class="w-auto"></div>
+        </div>
       </div>
       <div
         v-for="(armor, idx) in system.armors"
         :key="idx"
-        class="dw-armor-row"
+        class="border-b p-2"
       >
-        <input
-          type="text"
-          class="dw-input-text"
-          :value="armor.name"
-          @change="
-            saveArmor(idx, 'name', ($event.target as HTMLInputElement).value)
-          "
-          placeholder="Armor Name"
-        />
-        <input
-          type="number"
-          class="dw-input-num"
-          :value="armor.physicalSoak"
-          @change="
-            saveArmor(
-              idx,
-              'physicalSoak',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
-          min="0"
-        />
-        <input
-          type="number"
-          class="dw-input-num"
-          :value="armor.magicalSoak"
-          @change="
-            saveArmor(
-              idx,
-              'magicalSoak',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
-          min="0"
-        />
-        <input
-          type="number"
-          class="dw-input-num"
-          :value="armor.shield"
-          @change="
-            saveArmor(
-              idx,
-              'shield',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
-          min="0"
-        />
-        <input
-          type="number"
-          class="dw-input-num"
-          :value="armor.shieldHitsMax"
-          @change="
-            saveArmor(
-              idx,
-              'shieldHitsMax',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
-          min="0"
-        />
-        <input
-          type="checkbox"
-          :checked="armor.hasEmp"
-          @change="
-            saveArmor(
-              idx,
-              'hasEmp',
-              ($event.target as HTMLInputElement).checked
-            )
-          "
-        />
-        <button
-          class="dw-btn"
-          :class="armor.equipped ? 'dw-btn-active' : ''"
-          @click="equipArmor(idx)"
-          :title="armor.equipped ? 'Unequip' : 'Equip'"
-        >
-          {{ armor.equipped ? "✓" : "Equip" }}
-        </button>
-        <button
-          class="dw-btn dw-btn-danger"
-          @click="removeArmor(idx)"
-          title="Remove armor"
-        >
-          ✕
-        </button>
+        <div class="flex flex-wrap gap-1">
+          <div class="basis-1/4">
+            <input
+              type="text"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="armor.name"
+              @change="
+                saveArmor(
+                  idx,
+                  'name',
+                  ($event.target as HTMLInputElement).value
+                )
+              "
+              placeholder="Armor Name"
+            />
+          </div>
+          <div class="flex-1">
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="armor.physicalSoak"
+              @change="
+                saveArmor(
+                  idx,
+                  'physicalSoak',
+                  Number(($event.target as HTMLInputElement).value)
+                )
+              "
+              min="0"
+            />
+          </div>
+          <div class="flex-1">
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="armor.magicalSoak"
+              @change="
+                saveArmor(
+                  idx,
+                  'magicalSoak',
+                  Number(($event.target as HTMLInputElement).value)
+                )
+              "
+              min="0"
+            />
+          </div>
+          <div class="flex-1">
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="armor.shield"
+              @change="
+                saveArmor(
+                  idx,
+                  'shield',
+                  Number(($event.target as HTMLInputElement).value)
+                )
+              "
+              min="0"
+            />
+          </div>
+          <div class="flex-1">
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :value="armor.shieldHitsMax"
+              @change="
+                saveArmor(
+                  idx,
+                  'shieldHitsMax',
+                  Number(($event.target as HTMLInputElement).value)
+                )
+              "
+              min="0"
+            />
+          </div>
+          <div class="w-16 text-center">
+            <input
+              type="checkbox"
+              class="mr-2"
+              :checked="armor.hasEmp"
+              @change="
+                saveArmor(
+                  idx,
+                  'hasEmp',
+                  ($event.target as HTMLInputElement).checked
+                )
+              "
+            />
+          </div>
+          <div class="w-auto">
+            <button
+              type="button"
+              class="px-2 py-1 text-sm border rounded cursor-pointer transition-colors"
+              :class="
+                armor.equipped
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                  : 'border-blue-600 text-blue-600  hover:bg-blue-50'
+              "
+              @click="equipArmor(idx)"
+              :title="armor.equipped ? 'Unequip' : 'Equip'"
+            >
+              {{ armor.equipped ? "Equipped" : "Equip" }}
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 text-sm border border-red-600 rounded cursor-pointer bg-red-600 text-white hover:bg-red-700 transition-colors ml-1"
+              @click="removeArmor(idx)"
+              :title="'Remove armor'"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="dw-row">
-      <button class="dw-btn" @click="addArmor">+ Add Armor</button>
+    <div class="flex flex-wrap gap-1 my-2">
+      <div class="flex-1">
+        <button
+          type="button"
+          class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+          @click="addArmor"
+        >
+          + Add Armor
+        </button>
+      </div>
     </div>
   </div>
 </template>

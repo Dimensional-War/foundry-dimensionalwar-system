@@ -1,265 +1,441 @@
 <template>
   <div class="dw-status-tab">
     <!-- ─── HP Row ─────────────────────────────────────────────── -->
-    <div class="dw-row">
-      <span class="dw-label">HP:</span>
-      <div class="dw-meter-wrap">
-        <progress
-          class="dw-meter"
-          :value="system.resources.hp.value"
-          :max="system.resources.hp.max || 1"
-        />
-        <span class="dw-meter-text">
-          {{ system.resources.hp.value }} / {{ system.resources.hp.max }}
-        </span>
+    <div class="flex gap-1 my-2">
+      <div class="basis-2/12 my-2 font-bold">HP:</div>
+      <div class="basis-5/12 ml-1">
+        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+          <div
+            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all"
+            :class="
+              hpPercent < 25
+                ? 'bg-red-600'
+                : hpPercent < 50
+                  ? 'bg-yellow-500'
+                  : 'bg-green-600'
+            "
+            :style="`width: ${hpPercent}%`"
+          >
+            <span
+              class="text-white text-xs font-semibold px-2 whitespace-nowrap"
+              :title="`${system.resources.hp.value}/${system.resources.hp.max} (${hpPercent}%)`"
+            >
+              {{ system.resources.hp.value }}/{{ system.resources.hp.max }} ({{
+                hpPercent
+              }}%)
+            </span>
+          </div>
+        </div>
       </div>
-      <span class="dw-pct">{{ hpPercent }}%</span>
-      <label class="dw-check-label">
-        <input
-          type="checkbox"
-          :checked="system.combat.emp"
-          @change="
-            save('combat.emp', ($event.target as HTMLInputElement).checked)
-          "
-        />
-        EMP
-      </label>
-      <select
-        :value="system.combat.defenseEffect"
-        @change="
-          save(
-            'combat.defenseEffect',
-            ($event.target as HTMLSelectElement).value
-          )
-        "
-        class="dw-select"
-      >
-        <option value="no_effect">No Defense Effect</option>
-        <option value="protect">Protect</option>
-        <option value="shell">Shell</option>
-        <option value="wall">Wall</option>
-        <option value="shield">Shield</option>
-      </select>
-      <select
-        :value="system.combat.braceType"
-        @change="
-          save('combat.braceType', ($event.target as HTMLSelectElement).value)
-        "
-        class="dw-select dw-select-sm"
-      >
-        <option value="no_brace">No Brace</option>
-        <option value="brace">Brace</option>
-        <option value="half_brace">Half Brace</option>
-      </select>
+      <div class="basis-5/12">
+        <div class="flex gap-0">
+          <button
+            type="button"
+            class="grow px-3 py-1.5 border border-gray-600 cursor-pointer transition-colors first:rounded-l last:rounded-r -ml-px first:ml-0"
+            :class="
+              system.combat.emp
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+            "
+            @click="save('combat.emp', !system.combat.emp)"
+          >
+            EMP
+          </button>
+          <select
+            :value="system.combat.defenseEffect"
+            @change="
+              save(
+                'combat.defenseEffect',
+                ($event.target as HTMLSelectElement).value
+              )
+            "
+            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+          >
+            <option value="no_effect">No Defense Effect</option>
+            <option value="protect">Protect</option>
+            <option value="shell">Shell</option>
+            <option value="wall">Wall</option>
+            <option value="shield">Shield</option>
+          </select>
+          <select
+            :value="system.combat.braceType"
+            @change="
+              save(
+                'combat.braceType',
+                ($event.target as HTMLSelectElement).value
+              )
+            "
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+          >
+            <option value="no_brace">No Brace</option>
+            <option value="brace">Brace</option>
+            <option value="half_brace">Half Brace</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- ─── Soak Row ──────────────────────────────────────────── -->
-    <div class="dw-row">
-      <span class="dw-label">Soak:</span>
-      <span class="dw-soak-text">
-        P: {{ system.soak.physicalBase }}({{ totalPhysical }}), M:
-        {{ system.soak.magicalBase }}({{ totalMagical }}), S:
-        {{ system.soak.shield }}
-      </span>
-      <button
-        class="dw-btn"
-        @click="resetShield"
-        :title="'Reset shield hits to max'"
-      >
-        Shield ({{ system.soak.shieldHitsLeft }})
-      </button>
-      <label class="dw-check-label">
-        <input
-          type="checkbox"
-          :checked="system.combat.unsoakable"
-          @change="
-            save(
-              'combat.unsoakable',
-              ($event.target as HTMLInputElement).checked
-            )
-          "
-        />
-        Unsoakable
-      </label>
+    <div class="flex flex-wrap items-center gap-1 mb-2">
+      <div class="basis-2/12 my-2 font-bold">Soak:</div>
+      <div class="flex-1 ml-1">
+        <span title="Physical Soak (base + armor + shield)"
+          ><span class="font-bold">P: </span>{{ system.soak.physicalBase }}({{
+            totalPhysical
+          }})</span
+        >
+        <span>, </span>
+        <span title="Magical Soak (base + armor + shield)"
+          ><span class="font-bold">M: </span>{{ system.soak.magicalBase }}({{
+            totalMagical
+          }})</span
+        >
+        <span>, </span>
+        <span
+          v-if="system.soak.shield > 0"
+          title="Shield adds to soak for limited hits"
+          :class="{
+            'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
+            'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
+          }"
+          ><span class="font-bold">Shield: </span>+{{ system.soak.shield }} ({{
+            system.soak.shieldHitsLeft
+          }}
+          hits)</span
+        >
+      </div>
+      <div class="flex-1">
+        <div class="flex gap-0">
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors"
+            :class="
+              system.soak.shieldHitsLeft > 0
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+            "
+            @click="resetShield"
+            :title="'Reset shield hits to max'"
+          >
+            Shield ({{ system.soak.shieldHitsLeft }})
+          </button>
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r cursor-pointer transition-colors -ml-px"
+            :class="
+              system.combat.unsoakable
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+            "
+            @click="save('combat.unsoakable', !system.combat.unsoakable)"
+          >
+            Unsoakable
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── Damage Row ────────────────────────────────────────── -->
-    <div class="dw-row">
-      <button class="dw-btn" @click="resetDamageState">Reset</button>
-      <select
-        :value="system.combat.damageType"
-        @change="
-          save('combat.damageType', ($event.target as HTMLSelectElement).value)
-        "
-        class="dw-select"
+    <div class="flex flex-wrap gap-1">
+      <div class="basis-1/3">
+        <select
+          :value="system.combat.damageType"
+          @change="
+            save(
+              'combat.damageType',
+              ($event.target as HTMLSelectElement).value
+            )
+          "
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="0">Normal Damage</option>
+          <option value="1">Elemental Damage</option>
+        </select>
+      </div>
+      <div class="basis-1/4">
+        <input
+          type="text"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          :value="system.combat.damage"
+          @change="
+            save('combat.damage', ($event.target as HTMLInputElement).value)
+          "
+          :title="'Damage/Healing (1 or 1% or 1%c)'"
+          placeholder="Damage (1 or 1%)"
+        />
+      </div>
+      <div class="flex-1">
+        <div class="flex gap-0">
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+            :title="'Physical'"
+            @click="dealDamage('physical')"
+          >
+            Physical
+          </button>
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
+            :title="'Magical'"
+            @click="dealDamage('magical')"
+          >
+            Magical
+          </button>
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
+            :title="'Heal'"
+            @click="dealHealing"
+          >
+            Heal
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-1 mt-1">
+      <button
+        type="button"
+        class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+        @click="resetDamageState"
       >
-        <option value="0">Normal Damage</option>
-        <option value="1">Elemental Damage</option>
-      </select>
-      <input
-        type="text"
-        class="dw-input-sm"
-        :value="system.combat.damage"
-        @change="
-          save('combat.damage', ($event.target as HTMLInputElement).value)
-        "
-        title="Damage/Healing (1 or 1% or 1%c)"
-        placeholder="0"
-      />
-      <button class="dw-btn" @click="dealDamage('physical')">Physical</button>
-      <button class="dw-btn" @click="dealDamage('magical')">Magical</button>
-      <button class="dw-btn" @click="dealHealing">Heal</button>
-      <button class="dw-btn" @click="undoLastAction">Undo</button>
+        Reset State
+      </button>
+      <button
+        type="button"
+        class="flex-1 px-3 py-1.5 border border-yellow-500 rounded bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer transition-colors"
+        @click="undoLastAction"
+      >
+        Undo Last Action
+      </button>
     </div>
 
     <!-- ─── Elemental Row (visible when elemental damage) ─────── -->
-    <div v-if="system.combat.damageType === '1'" class="dw-row dw-row-indent">
-      <span class="dw-label">Elem 1:</span>
-      <select
-        :value="system.elements.selectedElement1Name"
-        @change="
-          save(
-            'elements.selectedElement1Name',
-            ($event.target as HTMLSelectElement).value
-          )
-        "
-        class="dw-select"
-      >
-        <option v-for="el in elementChoices" :key="el.key" :value="el.key">
-          {{ el.label }}
-        </option>
-      </select>
-      <select
-        :value="system.elements.selectedElement1Level"
-        @change="
-          save(
-            'elements.selectedElement1Level',
-            Number(($event.target as HTMLSelectElement).value)
-          )
-        "
-        class="dw-select dw-select-xs"
-      >
-        <option v-for="n in 11" :key="n - 1" :value="n - 1">{{ n - 1 }}</option>
-      </select>
-      <span class="dw-label">Elem 2:</span>
-      <select
-        :value="system.elements.selectedElement2Name"
-        @change="
-          save(
-            'elements.selectedElement2Name',
-            ($event.target as HTMLSelectElement).value
-          )
-        "
-        class="dw-select"
-      >
-        <option v-for="el in elementChoices" :key="el.key" :value="el.key">
-          {{ el.label }}
-        </option>
-      </select>
-      <select
-        :value="system.elements.selectedElement2Level"
-        @change="
-          save(
-            'elements.selectedElement2Level',
-            Number(($event.target as HTMLSelectElement).value)
-          )
-        "
-        class="dw-select dw-select-xs"
-      >
-        <option v-for="n in 11" :key="n - 1" :value="n - 1">{{ n - 1 }}</option>
-      </select>
+    <div
+      v-if="system.combat.damageType === '1'"
+      class="flex flex-wrap gap-1 my-2"
+    >
+      <div class="flex-1">
+        <div class="flex gap-1">
+          <select
+            :value="system.elements.selectedElement1Name"
+            @change="
+              save(
+                'elements.selectedElement1Name',
+                ($event.target as HTMLSelectElement).value
+              )
+            "
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+              {{ el.label }}
+            </option>
+          </select>
+          <select
+            :value="system.elements.selectedElement1Level"
+            @change="
+              save(
+                'elements.selectedElement1Level',
+                Number(($event.target as HTMLSelectElement).value)
+              )
+            "
+            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option v-for="n in 11" :key="n - 1" :value="n - 1">
+              {{ n - 1 }}
+            </option>
+          </select>
+          <select
+            :value="system.elements.selectedElement2Name"
+            @change="
+              save(
+                'elements.selectedElement2Name',
+                ($event.target as HTMLSelectElement).value
+              )
+            "
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+              {{ el.label }}
+            </option>
+          </select>
+          <select
+            :value="system.elements.selectedElement2Level"
+            @change="
+              save(
+                'elements.selectedElement2Level',
+                Number(($event.target as HTMLSelectElement).value)
+              )
+            "
+            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option v-for="n in 11" :key="n - 1" :value="n - 1">
+              {{ n - 1 }}
+            </option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- ─── Trance Row ────────────────────────────────────────── -->
-    <div v-if="system.gauges.hasTrance" class="dw-row">
-      <span class="dw-label">Trance:</span>
-      <div class="dw-meter-wrap">
-        <progress
-          class="dw-meter dw-meter-trance"
-          :value="system.gauges.trance"
-          :max="tranceMax"
-        />
-        <span class="dw-meter-text">{{ trancePct }}%</span>
+    <div v-if="system.gauges.hasTrance" class="flex flex-wrap gap-1 mb-2">
+      <div class="basis-2/12 my-2 font-bold">Trance:</div>
+      <div class="basis-5/12 ml-1">
+        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+          <div
+            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-500"
+            :style="`width: ${trancePct}%`"
+          >
+            <span class="inline-block mx-auto px-2"> {{ trancePct }}% </span>
+          </div>
+        </div>
       </div>
-      <button class="dw-btn" @click="activateTrance">Activate</button>
+      <div class="flex-1">
+        <button
+          type="button"
+          class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+          @click="activateTrance"
+        >
+          Activate
+        </button>
+      </div>
     </div>
 
     <!-- ─── Limit Break Row ───────────────────────────────────── -->
-    <div v-if="system.gauges.hasLimitBreak" class="dw-row">
-      <span class="dw-label">Limit Break:</span>
-      <div class="dw-meter-wrap">
-        <progress
-          class="dw-meter dw-meter-lb"
-          :value="system.gauges.limitBreak"
-          :max="limitBreakMax"
-        />
-        <span class="dw-meter-text">{{ limitBreakPct }}%</span>
+    <div v-if="system.gauges.hasLimitBreak" class="flex flex-wrap gap-1 mb-2">
+      <div class="basis-2/12 my-2 font-bold">Limit Break:</div>
+      <div class="basis-5/12 ml-1">
+        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+          <div
+            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-yellow-500"
+            :style="`width: ${limitBreakPct}%`"
+          >
+            <span class="inline-block mx-auto px-2">
+              {{ limitBreakPct }}%
+            </span>
+          </div>
+        </div>
       </div>
-      <input
-        type="number"
-        class="dw-input-num"
-        :value="spendLbAmount"
-        @change="
-          spendLbAmount = Number(($event.target as HTMLInputElement).value)
-        "
-        min="0"
-        title="Amount of Limit Break to spend"
-        placeholder="0"
-      />
-      <button class="dw-btn" @click="spendLimitBreak">Spend</button>
+      <div class="flex-1">
+        <div class="flex gap-1">
+          <input
+            type="number"
+            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            :value="spendLbAmount"
+            @change="
+              spendLbAmount = Number(($event.target as HTMLInputElement).value)
+            "
+            min="0"
+            :title="'Amount of Limit Break to spend'"
+            placeholder="0"
+          />
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+            @click="spendLimitBreak"
+          >
+            Spend
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── Gauge Multiplier Row ──────────────────────────────── -->
     <div
       v-if="system.gauges.hasTrance || system.gauges.hasLimitBreak"
-      class="dw-row"
+      class="flex flex-wrap gap-1 mb-2"
     >
-      <span class="dw-label dw-label-wide">Trance/Limit<br />Multiplier:</span>
-      <input
-        type="number"
-        class="dw-input-num"
-        :value="system.gauges.multiplier"
-        @change="
-          save(
-            'gauges.multiplier',
-            Number(($event.target as HTMLInputElement).value)
-          )
-        "
-        min="0"
-        step="0.1"
-      />
-      <input
-        type="text"
-        class="dw-input-sm"
-        v-model="gaugeMod"
-        placeholder=""
-        title="Modify trance/LB by this amount"
-      />
-      <button class="dw-btn" @click="modifyGauge">Modify To/By</button>
+      <div class="basis-2/12"></div>
+      <div class="basis-5/12">
+        <div class="flex gap-0">
+          <span
+            class="px-3 py-1.5 border border-gray-600 rounded-l bg-gray-100 text-gray-700"
+            title="times"
+            >×</span
+          >
+          <input
+            type="number"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+            :value="system.gauges.multiplier"
+            @change="
+              save(
+                'gauges.multiplier',
+                Number(($event.target as HTMLInputElement).value)
+              )
+            "
+            min="1"
+            :title="'Gauge Multiplier'"
+          />
+        </div>
+      </div>
+      <div class="flex-1">
+        <div class="flex gap-1">
+          <input
+            type="text"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model="gaugeMod"
+            placeholder="1 or +1/-1"
+            :title="'Modify Gauge to/by 1 or +1/-1'"
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+            @click="modifyGauge"
+            :title="'Modify'"
+          >
+            Modify
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── MP Row ────────────────────────────────────────────── -->
-    <div class="dw-row">
-      <span class="dw-label">MP:</span>
-      <div class="dw-meter-wrap">
-        <progress
-          class="dw-meter dw-meter-mp"
-          :value="system.resources.mp.value"
-          :max="system.resources.mp.max || 1"
-        />
-        <span class="dw-meter-text">
-          {{ system.resources.mp.value }} / {{ system.resources.mp.max }}
-        </span>
+    <div class="flex flex-wrap gap-1 my-2">
+      <div class="basis-2/12 my-2 font-bold">MP:</div>
+      <div class="flex-1 ml-1">
+        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+          <div
+            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-600"
+            :style="`width: ${mpPercent}%`"
+          >
+            <span
+              class="inline-block mx-auto px-2 text-white text-xs font-semibold"
+              :title="`${system.resources.mp.value}/${system.resources.mp.max} (${mpPercent}%)`"
+            >
+              {{ system.resources.mp.value }}/{{ system.resources.mp.max }} ({{
+                mpPercent
+              }}%)
+            </span>
+          </div>
+        </div>
       </div>
-      <input
-        type="text"
-        class="dw-input-sm"
-        v-model="mpMod"
-        placeholder=""
-        title="MP modification amount"
-      />
-      <button class="dw-btn dw-btn-sm" @click="modifyMp(-1)">-</button>
-      <button class="dw-btn dw-btn-sm" @click="modifyMp(1)">+</button>
+      <div class="basis-1/6">
+        <input
+          type="text"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          v-model="mpMod"
+          placeholder=""
+          :title="'MP modification amount'"
+        />
+      </div>
+      <div class="w-auto">
+        <div class="flex gap-1">
+          <button
+            type="button"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+            @click="modifyMp(-1)"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+            @click="modifyMp(1)"
+          >
+            +
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -376,12 +552,34 @@ const hpPercent = computed(() => {
   return Math.round((value / max) * 100 * 100) / 100;
 });
 
-const totalPhysical = computed(
-  () => system.soak.physicalBase + system.soak.armoredPhysical
-);
-const totalMagical = computed(
-  () => system.soak.magicalBase + system.soak.armoredMagical
-);
+const mpPercent = computed(() => {
+  const { value, max } = system.resources.mp;
+  if (!max) return 0;
+  return Math.round((value / max) * 100 * 100) / 100;
+});
+
+const totalPhysical = computed(() => {
+  let total = system.soak.physicalBase + system.soak.armoredPhysical;
+  if (
+    !system.combat.emp &&
+    system.soak.shieldHitsLeft > 0 &&
+    system.soak.shield > 0
+  ) {
+    total += system.soak.shield;
+  }
+  return total;
+});
+const totalMagical = computed(() => {
+  let total = system.soak.magicalBase + system.soak.armoredMagical;
+  if (
+    !system.combat.emp &&
+    system.soak.shieldHitsLeft > 0 &&
+    system.soak.shield > 0
+  ) {
+    total += system.soak.shield;
+  }
+  return total;
+});
 
 /** Max trance = max_hp * 2  */
 const tranceMax = computed(() => system.resources.hp.max * 2);
@@ -474,8 +672,18 @@ async function dealDamage(type: "physical" | "magical") {
     shield,
     shieldHitsLeft
   } = system.soak;
-  const totalPSoak = pSoak + armoredPhysical;
-  const totalMSoak = mSoak + armoredMagical;
+  // Calculate total soak including shield (if available)
+  let totalPSoak = pSoak + armoredPhysical;
+  let totalMSoak = mSoak + armoredMagical;
+  let newShieldHits = shieldHitsLeft;
+  let shieldUsed = false;
+
+  // Add shield to soak if available and not EMP'd
+  if (!system.combat.emp && shieldHitsLeft > 0 && shield > 0) {
+    totalPSoak += shield;
+    totalMSoak += shield;
+    shieldUsed = true;
+  }
 
   let dmg = parseDmgValue(system.combat.damage, cur, max);
 
@@ -494,10 +702,8 @@ async function dealDamage(type: "physical" | "magical") {
     dmg -= type === "physical" ? totalPSoak : totalMSoak;
   }
 
-  // Shield
-  let newShieldHits = shieldHitsLeft;
-  if (!system.combat.emp && shieldHitsLeft > 0 && shield > 0) {
-    dmg -= shield;
+  // Decrement shield hits if shield was used
+  if (shieldUsed) {
     newShieldHits = Math.max(0, shieldHitsLeft - 1);
   }
 

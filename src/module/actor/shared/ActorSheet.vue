@@ -11,7 +11,7 @@
       <div class="dw-header-info">
         <input
           type="text"
-          class="dw-name-input"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           :value="actor.name"
           @change="saveName(($event.target as HTMLInputElement).value)"
         />
