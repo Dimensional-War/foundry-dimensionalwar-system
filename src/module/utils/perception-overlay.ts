@@ -235,141 +235,28 @@ function buildOverlayContainer(
 }
 
 /**
- * Build the appropriate icon based on the sense type
+ * Build the appropriate icon based on the sense type using Font Awesome Pro
  */
-function buildSenseIcon(senseType: string): PIXI.Graphics {
-  const g = new PIXI.Graphics();
+function buildSenseIcon(senseType: string): PIXI.Text {
   const color = 0x64b5f6;
 
-  switch (senseType.toLowerCase()) {
-    case "sight":
-      return drawEyeIcon(g, color);
-    case "hearing":
-      return drawEarIcon(g, color);
-    case "smell":
-      return drawNoseIcon(g, color);
-    case "taste":
-      return drawTongueIcon(g, color);
-    case "touch":
-      return drawHandIcon(g, color);
-    default:
-      return drawEyeIcon(g, color); // Default to eye
-  }
-}
+  // Map sense types to Font Awesome unicode characters
+  const iconMap: Record<string, string> = {
+    sight: "\uf06e", // fa-eye
+    hearing: "\uf2a2", // fa-ear-listen
+    smell: "\uf72e", // fa-wind
+    taste: "\uf2e7", // fa-utensils
+    touch: "\uf256" // fa-hand
+  };
 
-/**
- * Draw an eye icon (Sight)
- */
-function drawEyeIcon(g: PIXI.Graphics, color: number): PIXI.Graphics {
-  const radius = ICON_SIZE / 2;
+  const unicode = iconMap[senseType.toLowerCase()] ?? "\uf06e"; // Default to eye
 
-  // Outer eye ellipse
-  g.lineStyle(2, color);
-  g.drawEllipse(radius, radius, radius, radius * 0.6);
+  const icon = new PIXI.Text(unicode, {
+    fontFamily: "Font Awesome 6 Pro",
+    fontSize: ICON_SIZE,
+    fill: color,
+    fontWeight: "900" // Solid style
+  });
 
-  // Iris
-  g.beginFill(color);
-  g.drawCircle(radius, radius, radius * 0.4);
-  g.endFill();
-
-  // Pupil
-  g.beginFill(0x0d1b2a);
-  g.drawCircle(radius, radius, radius * 0.2);
-  g.endFill();
-
-  return g;
-}
-
-/**
- * Draw an ear icon (Hearing)
- */
-function drawEarIcon(g: PIXI.Graphics, color: number): PIXI.Graphics {
-  const size = ICON_SIZE;
-
-  // Outer ear curve
-  g.lineStyle(2, color);
-  g.arc(size * 0.6, size / 2, size * 0.4, -Math.PI / 2, Math.PI / 2);
-
-  // Inner ear detail
-  g.arc(size * 0.6, size / 2, size * 0.2, -Math.PI / 2, Math.PI / 2);
-
-  return g;
-}
-
-/**
- * Draw a nose icon (Smell)
- */
-function drawNoseIcon(g: PIXI.Graphics, color: number): PIXI.Graphics {
-  const size = ICON_SIZE;
-  const cx = size / 2;
-  const cy = size / 2;
-
-  // Nose bridge (vertical line)
-  g.lineStyle(2, color);
-  g.moveTo(cx, cy - size * 0.3);
-  g.lineTo(cx, cy + size * 0.1);
-
-  // Left nostril
-  g.drawCircle(cx - size * 0.15, cy + size * 0.2, size * 0.1);
-
-  // Right nostril
-  g.drawCircle(cx + size * 0.15, cy + size * 0.2, size * 0.1);
-
-  return g;
-}
-
-/**
- * Draw a tongue icon (Taste)
- */
-function drawTongueIcon(g: PIXI.Graphics, color: number): PIXI.Graphics {
-  const size = ICON_SIZE;
-  const cx = size / 2;
-  const cy = size / 2;
-
-  // Tongue outline (rounded shape)
-  g.lineStyle(2, color);
-  g.beginFill(color, 0.3);
-
-  // Top of tongue (curved)
-  g.moveTo(cx - size * 0.3, cy - size * 0.2);
-  g.lineTo(cx + size * 0.3, cy - size * 0.2);
-
-  // Sides
-  g.lineTo(cx + size * 0.3, cy + size * 0.1);
-
-  // Bottom point
-  g.lineTo(cx, cy + size * 0.4);
-  g.lineTo(cx - size * 0.3, cy + size * 0.1);
-  g.lineTo(cx - size * 0.3, cy - size * 0.2);
-
-  g.endFill();
-
-  return g;
-}
-
-/**
- * Draw a hand icon (Touch)
- */
-function drawHandIcon(g: PIXI.Graphics, color: number): PIXI.Graphics {
-  const size = ICON_SIZE;
-  const cx = size / 2;
-  const cy = size / 2;
-
-  g.lineStyle(2, color);
-
-  // Palm (rounded rectangle base)
-  g.drawRoundedRect(cx - size * 0.2, cy, size * 0.4, size * 0.3, size * 0.05);
-
-  // Fingers (4 vertical lines)
-  for (let i = 0; i < 4; i++) {
-    const x = cx - size * 0.15 + i * size * 0.1;
-    g.moveTo(x, cy);
-    g.lineTo(x, cy - size * 0.3);
-  }
-
-  // Thumb (angled line)
-  g.moveTo(cx - size * 0.2, cy + size * 0.1);
-  g.lineTo(cx - size * 0.35, cy - size * 0.1);
-
-  return g;
+  return icon;
 }

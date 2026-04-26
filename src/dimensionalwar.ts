@@ -29,7 +29,7 @@ import { DwRollParser } from "./module/rolling/DwRollParser";
 import { DwSkillDiceTerm } from "./module/rolling/DwSkillDiceTerm";
 
 const initHandler = () => {
-  CONFIG.debug.rollParsing = true; // Enable debug logging for roll parsing
+  CONFIG.debug.rollParsing = false; // Enable debug logging for roll parsing
   // Register the custom Actor document class
   CONFIG.Actor.documentClass = SystemActor as unknown as typeof Actor;
 

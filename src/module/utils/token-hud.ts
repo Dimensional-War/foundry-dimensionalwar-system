@@ -158,15 +158,15 @@ export async function rollPerceptionCheck(
       ? ""
       : `(Awareness +${awareness}, Sense Bonus +${senseBonus})`;
 
-  // Use the Dimensional War skill check system
-  const roll = await rollSkillCheck(
-    actor,
-    `${senseType} Perception`,
-    senseLevel,
-    totalBonus,
-    1, // Always roll 1 die for perception
-    bonusDetails
-  );
+  // Build formula using skill notation
+  const effectiveBonus = senseLevel === 0 ? 0 : totalBonus;
+  const formula =
+    effectiveBonus !== 0
+      ? `1s${senseLevel} + ${effectiveBonus}`
+      : `1s${senseLevel}`;
+
+  const roll = await Roll.create(formula);
+  const evaluated = await roll.evaluate();
 
   // Find the token for overlay
   const tokenObj = (canvas as any)?.tokens?.placeables?.find(
@@ -174,19 +174,27 @@ export async function rollPerceptionCheck(
   ) as any;
   const tokenId: string | undefined = tokenObj?.id;
 
-  // Update the message flags to include perception-specific data
-  const messages = game.messages?.contents || [];
-  const lastMessage = messages[messages.length - 1];
-
-  if (lastMessage && tokenId) {
-    await lastMessage.update({
-      flags: {
-        dimensionalwar: {
-          perceptionCheck: true,
-          senseType: senseType,
-          tokenId: tokenId
-        }
-      }
-    } as any);
+  // Build flavor text with optional bonus details
+  let flavor = `${senseType} Perception Skill Check`;
+  if (bonusDetails && effectiveBonus !== 0) {
+    flavor += ` ${bonusDetails}`;
   }
+
+  // Create message with perception-specific flags from the start
+  await evaluated.toMessage({
+    flavor,
+    flags: {
+      // @ts-ignore
+      dimensionalwar: {
+        perceptionCheck: true,
+        skillCheck: true,
+        tokenId,
+        senseType,
+        skillName: `${senseType} Perception`,
+        skillLevel: senseLevel,
+        bonus: effectiveBonus
+      }
+    },
+    speaker: ChatMessage.getSpeaker({ actor })
+  });
 }

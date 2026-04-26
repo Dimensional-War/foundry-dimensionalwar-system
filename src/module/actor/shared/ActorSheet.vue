@@ -37,6 +37,7 @@
       <StatusTab v-if="activeTab === 'status'" />
       <ArmorTab v-else-if="activeTab === 'armor'" />
       <StatisticsTab v-else-if="activeTab === 'statistics'" />
+      <CustomsTab v-else-if="activeTab === 'customs'" />
       <RollsTab v-else-if="activeTab === 'rolls'" />
     </div>
   </div>
@@ -48,6 +49,7 @@ import { ActorType } from "../../enums";
 import StatusTab from "./StatusTab.vue";
 import ArmorTab from "./ArmorTab.vue";
 import StatisticsTab from "./StatisticsTab.vue";
+import CustomsTab from "./CustomsTab.vue";
 import RollsTab from "./RollsTab.vue";
 
 const actor = inject<Actor>("actor")!;
@@ -55,12 +57,37 @@ const sheet = inject<{ actor: Actor; render: () => void }>("sheet")!;
 
 const activeTab = ref("status");
 
-const tabs = [
-  { id: "status", label: "Status" },
-  { id: "armor", label: "Armor" },
-  { id: "statistics", label: "Statistics" },
-  { id: "rolls", label: "Rolls" }
-];
+const tabs = computed(() => {
+  const type = actor.type as string;
+
+  // Enemy: Status, Armor, Rolls (no Statistics/skills)
+  if (type === ActorType.Enemy) {
+    return [
+      { id: "status", label: "Status" },
+      { id: "armor", label: "Armor" },
+      { id: "rolls", label: "Rolls" }
+    ];
+  }
+
+  // PC and Ally: Status, Armor, Statistics, Customs, Rolls
+  if (type === ActorType.Pc || type === ActorType.Ally) {
+    return [
+      { id: "status", label: "Status" },
+      { id: "armor", label: "Armor" },
+      { id: "statistics", label: "Statistics" },
+      { id: "customs", label: "Customs" },
+      { id: "rolls", label: "Rolls" }
+    ];
+  }
+
+  // NPC and Boss: Status, Armor, Statistics, Rolls (no Customs)
+  return [
+    { id: "status", label: "Status" },
+    { id: "armor", label: "Armor" },
+    { id: "statistics", label: "Statistics" },
+    { id: "rolls", label: "Rolls" }
+  ];
+});
 
 const actorTypeLabel = computed(() => {
   const type = actor.type;
