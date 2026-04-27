@@ -5,14 +5,7 @@
         <div class="flex flex-wrap gap-1">
           <div class="basis-1/4">
             <select
-              :value="entry.category"
-              @change="
-                saveRoll(
-                  idx,
-                  'category',
-                  ($event.target as HTMLSelectElement).value
-                )
-              "
+              v-model="entry.category"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option v-for="cat in categories" :key="cat" :value="cat">
@@ -22,14 +15,7 @@
           </div>
           <div class="basis-1/6">
             <select
-              :value="entry.type"
-              @change="
-                saveRoll(
-                  idx,
-                  'type',
-                  ($event.target as HTMLSelectElement).value
-                )
-              "
+              v-model="entry.type"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="die">Die</option>
@@ -40,14 +26,7 @@
             <input
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :value="entry.bonusFormula"
-              @change="
-                saveRoll(
-                  idx,
-                  'bonusFormula',
-                  ($event.target as HTMLInputElement).value
-                )
-              "
+              v-model="entry.bonusFormula"
               placeholder="Formula (e.g. 1d20)"
             />
           </div>
@@ -55,14 +34,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :value="entry.bonusNumber"
-              @change="
-                saveRoll(
-                  idx,
-                  'bonusNumber',
-                  Number(($event.target as HTMLInputElement).value)
-                )
-              "
+              v-model.number="entry.bonusNumber"
               placeholder="Bonus"
             />
           </div>
@@ -70,14 +42,7 @@
             <input
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :value="entry.reasonBase"
-              @change="
-                saveRoll(
-                  idx,
-                  'reasonBase',
-                  ($event.target as HTMLInputElement).value
-                )
-              "
+              v-model="entry.reasonBase"
               placeholder="Reason"
             />
           </div>
@@ -146,12 +111,6 @@ const categories = [
   "Artisan"
 ];
 
-function saveRoll(idx: number, field: keyof RollEntry, value: unknown) {
-  (system.rolls[idx] as Record<string, unknown>)[field as string] = value;
-  // @ts-expect-error
-  actor.update({ "system.rolls": JSON.parse(JSON.stringify(system.rolls)) });
-}
-
 function addRoll() {
   const newRoll: RollEntry = {
     category: "Offensive",
@@ -162,14 +121,10 @@ function addRoll() {
     reasonBase: ""
   };
   system.rolls.push(newRoll);
-  // @ts-expect-error
-  actor.update({ "system.rolls": JSON.parse(JSON.stringify(system.rolls)) });
 }
 
 function removeRoll(idx: number) {
   system.rolls.splice(idx, 1);
-  // @ts-expect-error
-  actor.update({ "system.rolls": JSON.parse(JSON.stringify(system.rolls)) });
 }
 
 async function doRoll(idx: number) {

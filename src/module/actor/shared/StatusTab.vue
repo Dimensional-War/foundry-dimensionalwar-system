@@ -42,13 +42,7 @@
             EMP
           </button>
           <select
-            :value="system.combat.defenseEffect"
-            @change="
-              save(
-                'combat.defenseEffect',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.combat.defenseEffect"
             class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
           >
             <option value="no_effect">No Defense Effect</option>
@@ -58,13 +52,7 @@
             <option value="shield">Shield</option>
           </select>
           <select
-            :value="system.combat.braceType"
-            @change="
-              save(
-                'combat.braceType',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.combat.braceType"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
           >
             <option value="no_brace">No Brace</option>
@@ -92,16 +80,16 @@
         >
         <span>, </span>
         <span
-          v-if="system.soak.shield > 0"
+          v-if="system.soak.shieldSoak > 0"
           title="Shield adds to soak for limited hits"
           :class="{
             'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
             'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
           }"
-          ><span class="font-bold">Shield: </span>+{{ system.soak.shield }} ({{
-            system.soak.shieldHitsLeft
+          ><span class="font-bold">Shield: </span>+{{
+            system.soak.shieldSoak
           }}
-          hits)</span
+          ({{ system.soak.shieldHitsLeft }} hits)</span
         >
       </div>
       <div class="flex-1">
@@ -139,13 +127,7 @@
     <div class="flex flex-wrap gap-1">
       <div class="basis-1/3">
         <select
-          :value="system.combat.damageType"
-          @change="
-            save(
-              'combat.damageType',
-              ($event.target as HTMLSelectElement).value
-            )
-          "
+          v-model="system.combat.damageType"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="0">Normal Damage</option>
@@ -156,10 +138,7 @@
         <input
           type="text"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="system.combat.damage"
-          @change="
-            save('combat.damage', ($event.target as HTMLInputElement).value)
-          "
+          v-model="system.combat.damage"
           :title="'Damage/Healing (1 or 1% or 1%c)'"
           placeholder="Damage (1 or 1%)"
         />
@@ -218,13 +197,7 @@
       <div class="flex-1">
         <div class="flex gap-1">
           <select
-            :value="system.elements.selectedElement1Name"
-            @change="
-              save(
-                'elements.selectedElement1Name',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.elements.selectedElement1Name"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="el in elementChoices" :key="el.key" :value="el.key">
@@ -232,13 +205,7 @@
             </option>
           </select>
           <select
-            :value="system.elements.selectedElement1Level"
-            @change="
-              save(
-                'elements.selectedElement1Level',
-                Number(($event.target as HTMLSelectElement).value)
-              )
-            "
+            v-model.number="system.elements.selectedElement1Level"
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="n in 11" :key="n - 1" :value="n - 1">
@@ -246,13 +213,7 @@
             </option>
           </select>
           <select
-            :value="system.elements.selectedElement2Name"
-            @change="
-              save(
-                'elements.selectedElement2Name',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.elements.selectedElement2Name"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="el in elementChoices" :key="el.key" :value="el.key">
@@ -260,13 +221,7 @@
             </option>
           </select>
           <select
-            :value="system.elements.selectedElement2Level"
-            @change="
-              save(
-                'elements.selectedElement2Level',
-                Number(($event.target as HTMLSelectElement).value)
-              )
-            "
+            v-model.number="system.elements.selectedElement2Level"
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="n in 11" :key="n - 1" :value="n - 1">
@@ -321,10 +276,7 @@
           <input
             type="number"
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="spendLbAmount"
-            @change="
-              spendLbAmount = Number(($event.target as HTMLInputElement).value)
-            "
+            v-model.number="spendLbAmount"
             min="0"
             :title="'Amount of Limit Break to spend'"
             placeholder="0"
@@ -356,13 +308,7 @@
           <input
             type="number"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
-            :value="system.gauges.multiplier"
-            @change="
-              save(
-                'gauges.multiplier',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.gauges.multiplier"
             min="1"
             :title="'Gauge Multiplier'"
           />
@@ -463,6 +409,7 @@ type DwSystem = {
     armoredPhysical: number;
     armoredMagical: number;
     shield: number;
+    shieldSoak: number;
     shieldHitsLeft: number;
     shieldHitsMax: number;
   };
@@ -483,6 +430,16 @@ type DwSystem = {
     selectedElement2Name: string;
     selectedElement2Level: number;
   };
+  armors?: {
+    name: string;
+    physicalSoak: number;
+    magicalSoak: number;
+    shieldSoak: number;
+    shield: number;
+    shieldHitsMax: number;
+    hasEmp: boolean;
+    equipped: boolean;
+  }[];
   actionHistory: { name: string; changes: string }[];
 };
 
@@ -563,9 +520,9 @@ const totalPhysical = computed(() => {
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
-    system.soak.shield > 0
+    system.soak.shieldSoak > 0
   ) {
-    total += system.soak.shield;
+    total += system.soak.shieldSoak;
   }
   return total;
 });
@@ -574,9 +531,9 @@ const totalMagical = computed(() => {
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
-    system.soak.shield > 0
+    system.soak.shieldSoak > 0
   ) {
-    total += system.soak.shield;
+    total += system.soak.shieldSoak;
   }
   return total;
 });
@@ -669,7 +626,7 @@ async function dealDamage(type: "physical" | "magical") {
     magicalBase: mSoak,
     armoredPhysical,
     armoredMagical,
-    shield,
+    shieldSoak,
     shieldHitsLeft
   } = system.soak;
   // Calculate total soak including shield (if available)
@@ -679,9 +636,9 @@ async function dealDamage(type: "physical" | "magical") {
   let shieldUsed = false;
 
   // Add shield to soak if available and not EMP'd
-  if (!system.combat.emp && shieldHitsLeft > 0 && shield > 0) {
-    totalPSoak += shield;
-    totalMSoak += shield;
+  if (!system.combat.emp && shieldHitsLeft > 0 && shieldSoak > 0) {
+    totalPSoak += shieldSoak;
+    totalMSoak += shieldSoak;
     shieldUsed = true;
   }
 
@@ -765,12 +722,29 @@ async function dealDamage(type: "physical" | "magical") {
   system.gauges.trance = newTrance;
   system.gauges.limitBreak = newLimitBreak;
 
-  await sheet.saveSystem({
+  // Also update the equipped armor's shield hits
+  const equippedArmorIdx = system.armors?.findIndex((a: any) => a.equipped);
+  if (
+    equippedArmorIdx !== undefined &&
+    equippedArmorIdx >= 0 &&
+    system.armors
+  ) {
+    system.armors[equippedArmorIdx].shield = newShieldHits;
+  }
+
+  const saveData: Record<string, unknown> = {
     "resources.hp.value": newHp,
     "soak.shieldHitsLeft": newShieldHits,
     "gauges.trance": newTrance,
     "gauges.limitBreak": newLimitBreak
-  });
+  };
+
+  // Save armor array if shield hits changed
+  if (equippedArmorIdx !== undefined && equippedArmorIdx >= 0 && shieldUsed) {
+    saveData.armors = JSON.parse(JSON.stringify(system.armors));
+  }
+
+  await sheet.saveSystem(saveData);
 
   pushHistory(`${type}_damage`, changes);
 }

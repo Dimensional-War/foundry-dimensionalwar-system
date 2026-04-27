@@ -314,6 +314,12 @@ export class ActorDataModel extends TypeDataModel<
           min: 0,
           initial: 0
         }),
+        shieldSoak: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        }),
         shieldHitsLeft: new NumberField({
           required: true,
           integer: true,
@@ -417,6 +423,12 @@ export class ActorDataModel extends TypeDataModel<
             min: 0,
             initial: 0
           }),
+          shieldSoak: new NumberField({
+            required: true,
+            integer: true,
+            min: 0,
+            initial: 0
+          }),
           hasEmp: new BooleanField({ required: true, initial: false }),
           equipped: new BooleanField({ required: true, initial: false })
         })
@@ -427,6 +439,18 @@ export class ActorDataModel extends TypeDataModel<
           changes: new StringField({ required: true, initial: "[]" })
         })
       ),
+      movementFlags: new SchemaField({
+        hasFlight: new BooleanField({ required: true, initial: false }),
+        hasParkour: new BooleanField({ required: true, initial: false }),
+        hasTeleport: new BooleanField({ required: true, initial: false }),
+        hasCrossCountry: new BooleanField({ required: true, initial: false }),
+        burrowing: new NumberField({
+          required: true,
+          integer: true,
+          min: 0,
+          initial: 0
+        })
+      }),
       rolls: new ArrayField(
         new SchemaField({
           category: new StringField({

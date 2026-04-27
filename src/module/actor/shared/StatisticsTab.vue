@@ -9,13 +9,8 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.resources.hp.max"
-            @change="
-              saveAndClamp(
-                'resources.hp.max',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.resources.hp.max"
+            @input="clampHP"
             min="0"
           />
         </div>
@@ -24,13 +19,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.resources.hp.value"
-            @change="
-              save(
-                'resources.hp.value',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.resources.hp.value"
           />
         </div>
         <div class="basis-1/2">
@@ -38,13 +27,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.resources.mp.max"
-            @change="
-              save(
-                'resources.mp.max',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.resources.mp.max"
             min="0"
           />
         </div>
@@ -53,13 +36,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.resources.mp.value"
-            @change="
-              save(
-                'resources.mp.value',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.resources.mp.value"
             min="0"
           />
         </div>
@@ -75,13 +52,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.soak.physicalBase"
-            @change="
-              save(
-                'soak.physicalBase',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.soak.physicalBase"
             min="0"
           />
         </div>
@@ -90,13 +61,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="system.soak.magicalBase"
-            @change="
-              save(
-                'soak.magicalBase',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="system.soak.magicalBase"
             min="0"
           />
         </div>
@@ -110,13 +75,7 @@
         <div class="basis-1/2">
           <label class="block mb-1 font-medium">Element 1</label>
           <select
-            :value="system.elements.element1Name"
-            @change="
-              save(
-                'elements.element1Name',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.elements.element1Name"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="el in elementChoices" :key="el.key" :value="el.key">
@@ -127,13 +86,7 @@
         <div class="basis-1/2">
           <label class="block mb-1 font-medium">Level</label>
           <select
-            :value="system.elements.element1Level"
-            @change="
-              save(
-                'elements.element1Level',
-                Number(($event.target as HTMLSelectElement).value)
-              )
-            "
+            v-model.number="system.elements.element1Level"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="n in 6" :key="n - 1" :value="n - 1">
@@ -145,13 +98,7 @@
         <div class="basis-1/2">
           <label class="block mb-1 font-medium">Element 2</label>
           <select
-            :value="system.elements.element2Name"
-            @change="
-              save(
-                'elements.element2Name',
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="system.elements.element2Name"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="el in elementChoices" :key="el.key" :value="el.key">
@@ -162,13 +109,7 @@
         <div class="basis-1/2">
           <label class="block mb-1 font-medium">Level</label>
           <select
-            :value="system.elements.element2Level"
-            @change="
-              save(
-                'elements.element2Level',
-                Number(($event.target as HTMLSelectElement).value)
-              )
-            "
+            v-model.number="system.elements.element2Level"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option v-for="n in 6" :key="n - 1" :value="n - 1">
@@ -184,16 +125,7 @@
       <legend class="font-bold">Gauges</legend>
       <div class="grid grid-cols-2 gap-2 items-center">
         <label class="block font-medium">Has Trance</label>
-        <input
-          type="checkbox"
-          :checked="system.gauges.hasTrance"
-          @change="
-            save(
-              'gauges.hasTrance',
-              ($event.target as HTMLInputElement).checked
-            )
-          "
-        />
+        <input type="checkbox" v-model="system.gauges.hasTrance" />
         <label v-if="system.gauges.hasTrance" class="block font-medium"
           >Trance (cur)</label
         >
@@ -201,27 +133,12 @@
           v-if="system.gauges.hasTrance"
           type="number"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="system.gauges.trance"
-          @change="
-            save(
-              'gauges.trance',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
+          v-model.number="system.gauges.trance"
           min="0"
         />
 
         <label class="block font-medium">Has Limit Break</label>
-        <input
-          type="checkbox"
-          :checked="system.gauges.hasLimitBreak"
-          @change="
-            save(
-              'gauges.hasLimitBreak',
-              ($event.target as HTMLInputElement).checked
-            )
-          "
-        />
+        <input type="checkbox" v-model="system.gauges.hasLimitBreak" />
         <label v-if="system.gauges.hasLimitBreak" class="block font-medium"
           >Limit Break (cur)</label
         >
@@ -229,13 +146,7 @@
           v-if="system.gauges.hasLimitBreak"
           type="number"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="system.gauges.limitBreak"
-          @change="
-            save(
-              'gauges.limitBreak',
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
+          v-model.number="system.gauges.limitBreak"
           min="0"
         />
       </div>
@@ -245,93 +156,109 @@
     <fieldset class="border p-2 mb-3">
       <legend class="font-bold">Movement</legend>
       <div class="flex gap-2 flex-wrap">
-        <template v-for="skill in movementSkills" :key="skill.key">
-          <div class="basis-1/6">
-            <label class="block mb-1 font-medium"
-              >{{ skill.label }} Level</label
-            >
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :value="getSkillLevel(skill.key)"
-              @change="
-                saveSkillLevel(
-                  skill.key,
-                  Number(($event.target as HTMLInputElement).value)
-                )
-              "
-              min="0"
-              max="10"
-            />
-          </div>
-          <div class="basis-1/6">
-            <label class="block mb-1 font-medium"
-              >{{ skill.label }} Bonus</label
-            >
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :value="getSkillBonus(skill.key)"
-              @change="
-                saveSkillBonus(
-                  skill.key,
-                  Number(($event.target as HTMLInputElement).value)
-                )
-              "
-            />
-          </div>
-        </template>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Athletics Level</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="athleticsLevel"
+            min="0"
+            max="10"
+          />
+        </div>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Athletics Bonus</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="athleticsBonus"
+          />
+        </div>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Acrobatics Level</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="acrobaticsLevel"
+            min="0"
+            max="10"
+          />
+        </div>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Acrobatics Bonus</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="acrobaticsBonus"
+          />
+        </div>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Swimming Level</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="swimmingLevel"
+            min="0"
+            max="10"
+          />
+        </div>
+        <div class="basis-1/6">
+          <label class="block mb-1 font-medium">Swimming Bonus</label>
+          <input
+            type="number"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model.number="swimmingBonus"
+          />
+        </div>
       </div>
       <div class="flex gap-2 mt-2">
-        <div class="basis-1/3">
+        <div class="basis-1/4">
           <div class="flex items-center">
             <input
               type="checkbox"
               class="mr-2"
               id="hasFlight"
-              :checked="getSkillFlag('hasFlight')"
-              @change="
-                saveSkillFlag(
-                  'hasFlight',
-                  ($event.target as HTMLInputElement).checked
-                )
-              "
+              v-model="hasFlight"
             />
             <label class="ml-2" for="hasFlight">Has Flight</label>
           </div>
         </div>
-        <div class="basis-1/3">
+        <div class="basis-1/4">
           <div class="flex items-center">
             <input
               type="checkbox"
               class="mr-2"
               id="hasParkour"
-              :checked="getSkillFlag('hasParkour')"
-              @change="
-                saveSkillFlag(
-                  'hasParkour',
-                  ($event.target as HTMLInputElement).checked
-                )
-              "
+              v-model="hasParkour"
             />
             <label class="ml-2" for="hasParkour">Has Parkour</label>
           </div>
         </div>
-        <div class="basis-1/3">
+        <div class="basis-1/4">
           <div class="flex items-center">
             <input
               type="checkbox"
               class="mr-2"
               id="hasTeleport"
-              :checked="getSkillFlag('hasTeleport')"
-              @change="
-                saveSkillFlag(
-                  'hasTeleport',
-                  ($event.target as HTMLInputElement).checked
-                )
-              "
+              v-model="hasTeleport"
             />
             <label class="ml-2" for="hasTeleport">Has Teleport</label>
+          </div>
+        </div>
+        <div class="basis-1/4">
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              class="mr-2"
+              id="hasCrossCountry"
+              v-model="hasCrossCountry"
+            />
+            <label
+              class="ml-2"
+              for="hasCrossCountry"
+              :title="'Ignores difficult terrain when enabled'"
+              >Cross-Country Running</label
+            >
           </div>
         </div>
       </div>
@@ -360,13 +287,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseLevel('Sight')"
-            @change="
-              saveSenseLevel(
-                'Sight',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="sightLevel"
             min="0"
             max="10"
           />
@@ -376,13 +297,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseBonus('Sight')"
-            @change="
-              saveSenseBonus(
-                'Sight',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="sightBonus"
           />
         </div>
         <div class="basis-1/4">
@@ -390,13 +305,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseLevel('Hearing')"
-            @change="
-              saveSenseLevel(
-                'Hearing',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="hearingLevel"
             min="0"
             max="10"
           />
@@ -406,13 +315,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseBonus('Hearing')"
-            @change="
-              saveSenseBonus(
-                'Hearing',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="hearingBonus"
           />
         </div>
       </div>
@@ -424,13 +327,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseLevel('Smell')"
-            @change="
-              saveSenseLevel(
-                'Smell',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="smellLevel"
             min="0"
             max="10"
           />
@@ -440,13 +337,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseBonus('Smell')"
-            @change="
-              saveSenseBonus(
-                'Smell',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="smellBonus"
           />
         </div>
         <div class="basis-1/4">
@@ -454,13 +345,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseLevel('Taste')"
-            @change="
-              saveSenseLevel(
-                'Taste',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="tasteLevel"
             min="0"
             max="10"
           />
@@ -470,13 +355,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseBonus('Taste')"
-            @change="
-              saveSenseBonus(
-                'Taste',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="tasteBonus"
           />
         </div>
       </div>
@@ -488,13 +367,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseLevel('Touch')"
-            @change="
-              saveSenseLevel(
-                'Touch',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="touchLevel"
             min="0"
             max="10"
           />
@@ -504,13 +377,7 @@
           <input
             type="number"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="getSenseBonus('Touch')"
-            @change="
-              saveSenseBonus(
-                'Touch',
-                Number(($event.target as HTMLInputElement).value)
-              )
-            "
+            v-model.number="touchBonus"
           />
         </div>
       </div>
@@ -521,6 +388,7 @@
 <script setup lang="ts">
 import { inject, computed } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
+import type { SystemActor } from "../../documents";
 
 type SkillEntry = { level: number; bonus: number };
 type MovementSkills = {
@@ -584,13 +452,14 @@ type DwSystem = {
     hasFlight?: boolean;
     hasParkour?: boolean;
     hasTeleport?: boolean;
+    hasCrossCountry?: boolean;
     burrowing?: number;
     [key: string]: unknown;
   };
 };
 
 const system = inject<DwSystem>("reactiveSystem")!;
-const actor = inject<Actor>("actor")!;
+const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 void sheet;
 
@@ -622,42 +491,43 @@ const senses = [
   { key: "Touch", label: "Touch" }
 ];
 
-function save(path: string, value: unknown) {
-  const keys = path.split(".");
-  let obj = system as Record<string, unknown>;
-  for (let i = 0; i < keys.length - 1; i++) {
-    obj = obj[keys[i]] as Record<string, unknown>;
-  }
-  obj[keys[keys.length - 1]] = value;
-  sheet.saveSystem({ [path]: value });
-}
-
-function saveAndClamp(path: string, value: number) {
-  save(path, value);
-  // Clamp hp.value if max changed
-  if (path === "resources.hp.max") {
-    const cur = system.resources.hp.value;
-    if (cur > value) {
-      save("resources.hp.value", value);
-    }
+function clampHP() {
+  // Clamp hp.value if it exceeds the new max
+  if (system.resources.hp.value > system.resources.hp.max) {
+    system.resources.hp.value = system.resources.hp.max;
   }
 }
 
+// Helper functions for initializing nested structures
 function getSkillLevel(skillName: string): number {
   const s = system.skills?.movement;
   if (!s) return 0;
   const entry = (s as Record<string, unknown>)[skillName];
   if (!entry) return 0;
-  // Handle both simple { level } and complex { statistics[], level } entries
   if (Array.isArray(entry)) {
     return (entry[0] as SkillEntry)?.level ?? 0;
   }
   return (entry as SkillEntry).level ?? 0;
 }
 
-function saveSkillLevel(skillName: string, value: number) {
-  const path = `skills.movement.${skillName}.level`;
-  save(path, value);
+function setSkillLevel(skillName: string, value: number) {
+  if (!system.skills) {
+    (system as Record<string, unknown>).skills = {};
+  }
+  if (!system.skills.movement) {
+    system.skills.movement = {};
+  }
+  const entry = (system.skills.movement as Record<string, unknown>)[skillName];
+  if (!entry) {
+    (system.skills.movement as Record<string, unknown>)[skillName] = {
+      level: value,
+      bonus: 0
+    };
+  } else if (Array.isArray(entry)) {
+    (entry[0] as SkillEntry).level = value;
+  } else {
+    (entry as SkillEntry).level = value;
+  }
 }
 
 function getSkillBonus(skillName: string): number {
@@ -665,22 +535,30 @@ function getSkillBonus(skillName: string): number {
   if (!s) return 0;
   const entry = (s as Record<string, unknown>)[skillName];
   if (!entry) return 0;
-  // Handle both simple { level, bonus } and complex { statistics[], level, bonus } entries
   if (Array.isArray(entry)) {
     return (entry[0] as SkillEntry)?.bonus ?? 0;
   }
   return (entry as SkillEntry).bonus ?? 0;
 }
 
-function saveSkillBonus(skillName: string, value: number) {
-  const path = `skills.movement.${skillName}.bonus`;
-  save(path, value);
-}
-
-function getSkillFlag(flag: string): boolean {
-  return !!(system.movementFlags as Record<string, unknown> | undefined)?.[
-    flag
-  ];
+function setSkillBonus(skillName: string, value: number) {
+  if (!system.skills) {
+    (system as Record<string, unknown>).skills = {};
+  }
+  if (!system.skills.movement) {
+    system.skills.movement = {};
+  }
+  const entry = (system.skills.movement as Record<string, unknown>)[skillName];
+  if (!entry) {
+    (system.skills.movement as Record<string, unknown>)[skillName] = {
+      level: 0,
+      bonus: value
+    };
+  } else if (Array.isArray(entry)) {
+    (entry[0] as SkillEntry).bonus = value;
+  } else {
+    (entry as SkillEntry).bonus = value;
+  }
 }
 
 function getSenseLevel(senseName: string): number {
@@ -691,9 +569,22 @@ function getSenseLevel(senseName: string): number {
   return (entry as SkillEntry).level ?? 0;
 }
 
-function saveSenseLevel(senseName: string, value: number) {
-  const path = `skills.senses.${senseName}.level`;
-  save(path, value);
+function setSenseLevel(senseName: string, value: number) {
+  if (!system.skills) {
+    (system as Record<string, unknown>).skills = {};
+  }
+  if (!system.skills.senses) {
+    (system.skills as Record<string, unknown>).senses = {};
+  }
+  const entry = (system.skills.senses as Record<string, unknown>)[senseName];
+  if (!entry) {
+    (system.skills.senses as Record<string, unknown>)[senseName] = {
+      level: value,
+      bonus: 0
+    };
+  } else {
+    (entry as SkillEntry).level = value;
+  }
 }
 
 function getSenseBonus(senseName: string): number {
@@ -704,37 +595,150 @@ function getSenseBonus(senseName: string): number {
   return (entry as SkillEntry).bonus ?? 0;
 }
 
-function saveSenseBonus(senseName: string, value: number) {
-  const path = `skills.senses.${senseName}.bonus`;
-  save(path, value);
-}
-
-function saveSkillFlag(flag: string, value: boolean) {
-  if (!system.movementFlags) {
-    (system as Record<string, unknown>).movementFlags = {};
+function setSenseBonus(senseName: string, value: number) {
+  if (!system.skills) {
+    (system as Record<string, unknown>).skills = {};
   }
-  (system.movementFlags as Record<string, unknown>)[flag] = value;
-  sheet.saveSystem({ [`movementFlags.${flag}`]: value });
+  if (!system.skills.senses) {
+    (system.skills as Record<string, unknown>).senses = {};
+  }
+  const entry = (system.skills.senses as Record<string, unknown>)[senseName];
+  if (!entry) {
+    (system.skills.senses as Record<string, unknown>)[senseName] = {
+      level: 0,
+      bonus: value
+    };
+  } else {
+    (entry as SkillEntry).bonus = value;
+  }
 }
 
-// Speeds mirroring the CSB hidden formulas:
-// walkingSpeed = 20 + (ceil(athletics / 3) * 5)
-// acrobaticsSpeed = 20 + (ceil(acrobatics / 3) * 5)
-// swimmingSpeed = 20 + (ceil(swimming / 3) * 5)
-// flyingSpeed = walkingSpeed * hasFlight
+function getSkillFlag(flag: string): boolean {
+  const flags = system.movementFlags as
+    | Record<string, boolean | number | undefined>
+    | undefined;
+  const value = flags?.[flag];
+  return typeof value === "boolean" ? value : false;
+}
+
+function setSkillFlag(flag: string, value: boolean) {
+  if (system.movementFlags) {
+    (system.movementFlags as Record<string, unknown>)[flag] = value;
+  }
+}
+
+// Computed properties for v-model binding
+const athleticsLevel = computed({
+  get: () => getSkillLevel("Athletics"),
+  set: (value: number) => setSkillLevel("Athletics", value)
+});
+
+const athleticsBonus = computed({
+  get: () => getSkillBonus("Athletics"),
+  set: (value: number) => setSkillBonus("Athletics", value)
+});
+
+const acrobaticsLevel = computed({
+  get: () => getSkillLevel("Acrobatics"),
+  set: (value: number) => setSkillLevel("Acrobatics", value)
+});
+
+const acrobaticsBonus = computed({
+  get: () => getSkillBonus("Acrobatics"),
+  set: (value: number) => setSkillBonus("Acrobatics", value)
+});
+
+const swimmingLevel = computed({
+  get: () => getSkillLevel("Swimming"),
+  set: (value: number) => setSkillLevel("Swimming", value)
+});
+
+const swimmingBonus = computed({
+  get: () => getSkillBonus("Swimming"),
+  set: (value: number) => setSkillBonus("Swimming", value)
+});
+
+const hasFlight = computed({
+  get: () => getSkillFlag("hasFlight"),
+  set: (value: boolean) => setSkillFlag("hasFlight", value)
+});
+
+const hasParkour = computed({
+  get: () => getSkillFlag("hasParkour"),
+  set: (value: boolean) => setSkillFlag("hasParkour", value)
+});
+
+const hasTeleport = computed({
+  get: () => getSkillFlag("hasTeleport"),
+  set: (value: boolean) => setSkillFlag("hasTeleport", value)
+});
+
+const hasCrossCountry = computed({
+  get: () => getSkillFlag("hasCrossCountry"),
+  set: (value: boolean) => setSkillFlag("hasCrossCountry", value)
+});
+
+const sightLevel = computed({
+  get: () => getSenseLevel("Sight"),
+  set: (value: number) => setSenseLevel("Sight", value)
+});
+
+const sightBonus = computed({
+  get: () => getSenseBonus("Sight"),
+  set: (value: number) => setSenseBonus("Sight", value)
+});
+
+const hearingLevel = computed({
+  get: () => getSenseLevel("Hearing"),
+  set: (value: number) => setSenseLevel("Hearing", value)
+});
+
+const hearingBonus = computed({
+  get: () => getSenseBonus("Hearing"),
+  set: (value: number) => setSenseBonus("Hearing", value)
+});
+
+const smellLevel = computed({
+  get: () => getSenseLevel("Smell"),
+  set: (value: number) => setSenseLevel("Smell", value)
+});
+
+const smellBonus = computed({
+  get: () => getSenseBonus("Smell"),
+  set: (value: number) => setSenseBonus("Smell", value)
+});
+
+const tasteLevel = computed({
+  get: () => getSenseLevel("Taste"),
+  set: (value: number) => setSenseLevel("Taste", value)
+});
+
+const tasteBonus = computed({
+  get: () => getSenseBonus("Taste"),
+  set: (value: number) => setSenseBonus("Taste", value)
+});
+
+const touchLevel = computed({
+  get: () => getSenseLevel("Touch"),
+  set: (value: number) => setSenseLevel("Touch", value)
+});
+
+const touchBonus = computed({
+  get: () => getSenseBonus("Touch"),
+  set: (value: number) => setSenseBonus("Touch", value)
+});
+
+// Speeds calculated by the actor document
+// Formula: 20 + (ceil(skillLevel / 3) * 5)
 const speeds = computed(() => {
-  const athl = getSkillLevel("Athletics");
-  const acro = getSkillLevel("Acrobatics");
-  const swim = getSkillLevel("Swimming");
-  const burrow = (system.movementFlags?.burrowing as number | undefined) ?? 0;
   const hasFlight = getSkillFlag("hasFlight");
 
-  const walking = 20 + Math.ceil(athl / 3) * 5;
-  const acrobatics = 20 + Math.ceil(acro / 3) * 5;
-  const swimming = 20 + Math.ceil(swim / 3) * 5;
-  const flying = hasFlight ? walking : 0;
-  const burrowing = burrow > 0 ? 20 + Math.ceil(burrow / 3) * 5 : 0;
-
-  return { walking, acrobatics, swimming, flying, burrowing };
+  return {
+    walking: actor.walkingSpeed,
+    acrobatics: actor.acrobaticsSpeed,
+    swimming: actor.swimmingSpeed,
+    flying: hasFlight ? actor.flyingSpeed : 0,
+    burrowing: actor.burrowingSpeed
+  };
 });
 </script>

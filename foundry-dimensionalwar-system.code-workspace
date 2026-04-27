@@ -10,7 +10,10 @@
 			"path": "../../../foundry-dw-csb-functions"
 		},
 		{
-			"path": "C:/Users/Brendan/AppData/Roaming/mIRC/scripts/Character-Tracker"
+			"path": "../../modules/foundryvtt-drag-ruler"
+		},
+		{
+			"path": "../../modules/foundry-dw-dragruler-provider"
 		}
 	],
 	"settings": {}

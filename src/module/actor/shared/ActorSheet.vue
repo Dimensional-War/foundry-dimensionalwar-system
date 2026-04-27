@@ -4,7 +4,7 @@
     <div class="dw-sheet-header">
       <img
         class="dw-actor-img"
-        :src="actor.img ?? 'icons/svg/mystery-man.svg'"
+        :src="reactiveActor.img ?? 'icons/svg/mystery-man.svg'"
         @click="editImage"
         title="Click to change portrait"
       />
@@ -12,8 +12,7 @@
         <input
           type="text"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="actor.name"
-          @change="saveName(($event.target as HTMLInputElement).value)"
+          v-model="reactiveActor.name"
         />
         <div class="dw-actor-type">{{ actorTypeLabel }}</div>
       </div>
@@ -44,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, computed } from "vue";
+import { inject, ref, computed, watch, onMounted } from "vue";
 import { ActorType } from "../../enums";
 import StatusTab from "./StatusTab.vue";
 import ArmorTab from "./ArmorTab.vue";
@@ -53,9 +52,14 @@ import CustomsTab from "./CustomsTab.vue";
 import RollsTab from "./RollsTab.vue";
 
 const actor = inject<Actor>("actor")!;
+const reactiveActor = inject<Actor>("reactiveActor")!;
 const sheet = inject<{ actor: Actor; render: () => void }>("sheet")!;
 
-const activeTab = ref("status");
+// Initialize from stored preference or default to "status"
+const activeTab = ref(
+  // @ts-expect-error - Flag types not fully defined in Foundry types
+  (actor.getFlag("dimensionalwar", "activeTab") as string) ?? "status"
+);
 
 const tabs = computed(() => {
   const type = actor.type as string;
@@ -101,20 +105,32 @@ const actorTypeLabel = computed(() => {
   return labels[type] ?? type;
 });
 
+// Validate that the stored tab exists for this actor type
+onMounted(() => {
+  const validTabIds = tabs.value.map(t => t.id);
+  if (!validTabIds.includes(activeTab.value)) {
+    activeTab.value = "status";
+  }
+});
+
+// Save active tab preference when it changes
+watch(activeTab, newTab => {
+  // @ts-expect-error - Flag types not fully defined in Foundry types
+  actor.setFlag("dimensionalwar", "activeTab", newTab);
+});
+
 function editImage() {
   // Use Foundry's file picker
   const fp = new FilePicker({
     type: "image",
     current: actor.img ?? undefined,
     callback: (path: string) => {
-      actor.update({ img: path });
+      // Modify reactive actor - watcher will sync to Foundry
+      reactiveActor.img = path;
     }
   });
   fp.browse();
 }
 
-function saveName(value: string) {
-  actor.update({ name: value });
-}
 void sheet;
 </script>

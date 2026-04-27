@@ -33,10 +33,7 @@
         <input
           type="text"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="custom.name"
-          @change="
-            updateCustomName(index, ($event.target as HTMLInputElement).value)
-          "
+          v-model="custom.name"
         />
       </div>
 
@@ -45,13 +42,7 @@
         <input
           type="number"
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          :value="custom.mpCost"
-          @change="
-            updateCustomMpCost(
-              index,
-              Number(($event.target as HTMLInputElement).value)
-            )
-          "
+          v-model.number="custom.mpCost"
           min="1"
         />
       </div>
@@ -63,13 +54,7 @@
           <label class="block mb-1 font-medium">Elemental Type</label>
           <select
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            :value="custom.specialAttributes?.elemental"
-            @change="
-              updateCustomElemental(
-                index,
-                ($event.target as HTMLSelectElement).value
-              )
-            "
+            v-model="custom.specialAttributes.elemental"
           >
             <option value="">None</option>
             <option value="Fire">Fire</option>
@@ -89,13 +74,7 @@
           <input
             type="checkbox"
             :id="`restorative-${index}`"
-            :checked="custom.specialAttributes?.restorative"
-            @change="
-              updateCustomRestorative(
-                index,
-                ($event.target as HTMLInputElement).checked
-              )
-            "
+            v-model="custom.specialAttributes.restorative"
           />
           <label :for="`restorative-${index}`" class="font-medium"
             >Restorative</label
@@ -125,7 +104,17 @@ interface SystemData {
 const actor = inject<Actor>("actor")!;
 const system = inject<SystemData>("reactiveSystem")!;
 
-const customs = computed(() => system.customs ?? []);
+const customs = computed(() => {
+  const list = system.customs ?? [];
+  // Ensure specialAttributes exists on all customs
+  return list.map(custom => ({
+    ...custom,
+    specialAttributes: custom.specialAttributes ?? {
+      elemental: "",
+      restorative: false
+    }
+  }));
+});
 
 function addCustom() {
   const newCustoms = [
@@ -139,47 +128,11 @@ function addCustom() {
       }
     }
   ];
-  actor.update({ "system.customs": newCustoms });
+  system.customs = newCustoms;
 }
 
 function removeCustom(index: number) {
   const newCustoms = customs.value.filter((_, i) => i !== index);
-  actor.update({ "system.customs": newCustoms });
-}
-
-function updateCustomName(index: number, value: string) {
-  const newCustoms = [...customs.value];
-  newCustoms[index] = { ...newCustoms[index], name: value };
-  actor.update({ "system.customs": newCustoms });
-}
-
-function updateCustomMpCost(index: number, value: number) {
-  const newCustoms = [...customs.value];
-  newCustoms[index] = { ...newCustoms[index], mpCost: value };
-  actor.update({ "system.customs": newCustoms });
-}
-
-function updateCustomElemental(index: number, value: string) {
-  const newCustoms = [...customs.value];
-  newCustoms[index] = {
-    ...newCustoms[index],
-    specialAttributes: {
-      ...newCustoms[index].specialAttributes,
-      elemental: value
-    }
-  };
-  actor.update({ "system.customs": newCustoms });
-}
-
-function updateCustomRestorative(index: number, value: boolean) {
-  const newCustoms = [...customs.value];
-  newCustoms[index] = {
-    ...newCustoms[index],
-    specialAttributes: {
-      ...newCustoms[index].specialAttributes,
-      restorative: value
-    }
-  };
-  actor.update({ "system.customs": newCustoms });
+  system.customs = newCustoms;
 }
 </script>

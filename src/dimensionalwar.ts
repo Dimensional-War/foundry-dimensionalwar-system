@@ -127,7 +127,7 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
       ActorType.Boss
     ];
     if (!supportedTypes.includes(actor.type)) {
-      console.log("Actor type not supported:", actor.type);
+      console.warn("Actor type not supported:", actor.type);
       return {};
     }
 
@@ -335,4 +335,46 @@ Hooks.on("canvasReady", () => {
 // Clean up the overlay for any token that is deleted
 Hooks.on("deleteToken", (_scene: any, tokenDoc: any) => {
   if (tokenDoc?.id) removePerceptionOverlay(tokenDoc.id);
+});
+
+// ─── Region Movement Cost: Cross-Country Running ─────────────────────────────
+
+/**
+ * Override CONFIG.Token.movement.TerrainData.getMovementCostFunction to ignore terrain for Cross-Country Running
+ * In Foundry v13, this is the proper place to control how terrain costs are calculated
+ */
+Hooks.once("ready", () => {
+  const TerrainData = CONFIG.Token.movement.TerrainData;
+  if (!TerrainData) {
+    console.warn(
+      "[DW] TerrainData not found - region terrain costs cannot be modified"
+    );
+    return;
+  }
+
+  // @ts-expect-error - getMovementCostFunction not in type definition but exists in v13
+  const originalGetMovementCostFunction = TerrainData.getMovementCostFunction;
+
+  // @ts-expect-error - getMovementCostFunction not in type definition but exists in v13
+  TerrainData.getMovementCostFunction = function (
+    token: any,
+    options: any = {}
+  ) {
+    // Check if this token has cross-country running
+    const actor = token?.actor as SystemActor | undefined;
+    const hasCrossCountry =
+      // @ts-expect-error - movementFlags not in base type definition
+      actor?.system?.movementFlags?.hasCrossCountry || false;
+
+    if (hasCrossCountry) {
+      // Return a cost function that ignores terrain.difficulty
+      return (from: any, to: any, distance: number, segment: any) => {
+        // Return base distance, ignoring segment.terrain?.difficulty multiplier
+        return distance;
+      };
+    }
+
+    // Normal flow: use original cost function (includes terrain.difficulty)
+    return originalGetMovementCostFunction.call(this, token, options);
+  };
 });
