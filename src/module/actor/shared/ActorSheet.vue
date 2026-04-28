@@ -64,32 +64,33 @@ const activeTab = ref(
 const tabs = computed(() => {
   const type = actor.type as string;
 
-  // Enemy: Status, Armor, Rolls (no Statistics/skills)
+  // Enemy: Status, Rolls, Armor, Statistics (no Customs)
   if (type === ActorType.Enemy) {
     return [
       { id: "status", label: "Status" },
+      { id: "rolls", label: "Rolls" },
       { id: "armor", label: "Armor" },
-      { id: "rolls", label: "Rolls" }
+      { id: "statistics", label: "Statistics" }
     ];
   }
 
-  // PC and Ally: Status, Armor, Statistics, Customs, Rolls
+  // PC and Ally: Status, Rolls, Armor, Statistics, Customs
   if (type === ActorType.Pc || type === ActorType.Ally) {
     return [
       { id: "status", label: "Status" },
+      { id: "rolls", label: "Rolls" },
       { id: "armor", label: "Armor" },
       { id: "statistics", label: "Statistics" },
-      { id: "customs", label: "Customs" },
-      { id: "rolls", label: "Rolls" }
+      { id: "customs", label: "Customs" }
     ];
   }
 
-  // NPC and Boss: Status, Armor, Statistics, Rolls (no Customs)
+  // NPC and Boss: Status, Rolls, Armor, Statistics (no Customs)
   return [
     { id: "status", label: "Status" },
+    { id: "rolls", label: "Rolls" },
     { id: "armor", label: "Armor" },
-    { id: "statistics", label: "Statistics" },
-    { id: "rolls", label: "Rolls" }
+    { id: "statistics", label: "Statistics" }
   ];
 });
 

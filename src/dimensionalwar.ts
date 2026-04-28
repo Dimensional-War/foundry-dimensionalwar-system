@@ -27,6 +27,7 @@ import {
 import { DwRoll } from "./module/rolling/DwRoll";
 import { DwRollParser } from "./module/rolling/DwRollParser";
 import { DwSkillDiceTerm } from "./module/rolling/DwSkillDiceTerm";
+import { openCSBImportDialog } from "./module/utils/csb-import-dialog";
 
 const initHandler = () => {
   CONFIG.debug.rollParsing = false; // Enable debug logging for roll parsing
@@ -227,6 +228,23 @@ if (import.meta.env.DEV) {
   });
 }
 
+// Register CSB Import Settings Menu
+Hooks.once("init", () => {
+  if (!game.settings) return;
+
+  game.settings.registerMenu("dimensionalwar", "csbImport", {
+    name: "Import CSB Actors",
+    label: "Import CSB Actors",
+    hint: "Import actor files from Custom System Builder (CSB) legacy system",
+    icon: "fas fa-file-import",
+    restricted: true,
+    // @ts-expect-error - onClick is valid but not in v13 types yet
+    onClick: () => {
+      openCSBImportDialog();
+    }
+  });
+});
+
 // ─── Token HUD: Inject Perception Button ──────────────────────────────────────
 
 Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
@@ -377,4 +395,36 @@ Hooks.once("ready", () => {
     // Normal flow: use original cost function (includes terrain.difficulty)
     return originalGetMovementCostFunction.call(this, token, options);
   };
+});
+
+// ─── Add CSB Import Button to Actors Directory ───────────────────────────────
+
+Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement) => {
+  // Add import button to the directory header
+  const header = element.querySelector(".directory-header");
+  if (!header) return;
+
+  // Check if button already exists
+  if (header.querySelector(".csb-import-btn")) return;
+
+  const importBtn = document.createElement("button");
+  importBtn.className = "csb-import-btn";
+  importBtn.title = "Import CSB Actors";
+  importBtn.type = "button";
+  importBtn.innerHTML = '<i class="fas fa-file-import"></i> Import CSB';
+
+  importBtn.addEventListener("click", () => {
+    openCSBImportDialog();
+  });
+
+  // Add button after the create button
+  const createBtn = header.querySelector('[data-action="createDocument"]');
+  if (createBtn && createBtn.parentElement) {
+    createBtn.parentElement.insertBefore(importBtn, createBtn.nextSibling);
+  } else {
+    const actionButtons = header.querySelector(".action-buttons");
+    if (actionButtons) {
+      actionButtons.appendChild(importBtn);
+    }
+  }
 });

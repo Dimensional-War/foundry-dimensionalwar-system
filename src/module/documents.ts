@@ -1,6 +1,6 @@
 export class SystemActor extends Actor {
   /**
-   * Pre-create hook to set default token settings for PC actors
+   * Pre-create hook to set default token settings for actors
    */
   protected override async _preCreate(
     data: any,
@@ -9,14 +9,30 @@ export class SystemActor extends Actor {
   ): Promise<boolean | void> {
     await super._preCreate(data, options, user);
 
-    // Set default token settings for PC actors
-    if (data.type === "pc") {
-      const prototypeToken = {
-        displayBars: CONST.TOKEN_DISPLAY_MODES.ALWAYS,
-        bar1: { attribute: "resources.hp" },
-        bar2: { attribute: "resources.mp" }
-      };
-      this.updateSource({ prototypeToken });
+    // Set default token settings based on actor type
+    const prototypeToken = {
+      bar1: { attribute: "resources.hp" },
+      bar2: { attribute: "resources.mp" }
+    };
+
+    // PC and Ally: bars always visible (player-controlled characters)
+    if (data.type === "pc" || data.type === "ally") {
+      this.updateSource({
+        prototypeToken: {
+          ...prototypeToken,
+          displayBars: CONST.TOKEN_DISPLAY_MODES.ALWAYS
+        }
+      });
+    }
+
+    // NPC, Enemy, Boss: bars visible to GM only
+    if (data.type === "npc" || data.type === "enemy" || data.type === "boss") {
+      this.updateSource({
+        prototypeToken: {
+          ...prototypeToken,
+          displayBars: CONST.TOKEN_DISPLAY_MODES.OWNER
+        }
+      });
     }
   }
 

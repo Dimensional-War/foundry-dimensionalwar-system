@@ -78,7 +78,7 @@
             totalMagical
           }})</span
         >
-        <span>, </span>
+        <br v-if="system.soak.shieldSoak > 0" />
         <span
           v-if="system.soak.shieldSoak > 0"
           title="Shield adds to soak for limited hits"

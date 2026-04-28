@@ -3,7 +3,9 @@
 @import "tailwindcss/theme.css" layer(theme);
 
 @layer system {
-    .application.sheet.dw-sheet {
+
+    .application.sheet.dw-sheet,
+    .application.dw-dialog {
         .window-content {
             color: #444444;
             background: url(/ui/parchment.jpg) repeat;
@@ -438,6 +440,28 @@
         align-items: center;
         gap: 4px;
         flex-wrap: wrap;
+    }
+
+    /* ── CSB Import Button ────────────────────────────────────────── */
+    .csb-import-btn {
+        padding: 4px 12px;
+        margin-left: 8px;
+        background: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+
+    .csb-import-btn:hover {
+        background: #357abd;
+    }
+
+    .csb-import-btn i {
+        margin-right: 4px;
     }
 
 }

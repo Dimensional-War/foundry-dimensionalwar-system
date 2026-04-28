@@ -152,236 +152,239 @@
       </div>
     </fieldset>
 
-    <!-- ─── Movement Skills ──────────────────────────────────────── -->
-    <fieldset class="border p-2 mb-3">
-      <legend class="font-bold">Movement</legend>
-      <div class="flex gap-2 flex-wrap">
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Athletics Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="athleticsLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Athletics Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="athleticsBonus"
-          />
-        </div>
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Acrobatics Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="acrobaticsLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Acrobatics Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="acrobaticsBonus"
-          />
-        </div>
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Swimming Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="swimmingLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/6">
-          <label class="block mb-1 font-medium">Swimming Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="swimmingBonus"
-          />
-        </div>
-      </div>
-      <div class="flex gap-2 mt-2">
-        <div class="basis-1/4">
-          <div class="flex items-center">
+    <!-- ─── Skills (Character types only: pc, npc, ally, boss) ─────── -->
+    <template v-if="hasSkills">
+      <!-- ─── Movement Skills ──────────────────────────────────────── -->
+      <fieldset class="border p-2 mb-3">
+        <legend class="font-bold">Movement</legend>
+        <div class="flex gap-2 flex-wrap">
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Athletics Level</label>
             <input
-              type="checkbox"
-              class="mr-2"
-              id="hasFlight"
-              v-model="hasFlight"
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="athleticsLevel"
+              min="0"
+              max="10"
             />
-            <label class="ml-2" for="hasFlight">Has Flight</label>
+          </div>
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Athletics Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="athleticsBonus"
+            />
+          </div>
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Acrobatics Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="acrobaticsLevel"
+              min="0"
+              max="10"
+            />
+          </div>
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Acrobatics Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="acrobaticsBonus"
+            />
+          </div>
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Swimming Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="swimmingLevel"
+              min="0"
+              max="10"
+            />
+          </div>
+          <div class="basis-1/6">
+            <label class="block mb-1 font-medium">Swimming Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="swimmingBonus"
+            />
           </div>
         </div>
-        <div class="basis-1/4">
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              class="mr-2"
-              id="hasParkour"
-              v-model="hasParkour"
-            />
-            <label class="ml-2" for="hasParkour">Has Parkour</label>
+        <div class="flex gap-2 mt-2">
+          <div class="basis-1/4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="mr-2"
+                id="hasFlight"
+                v-model="hasFlight"
+              />
+              <label class="ml-2" for="hasFlight">Has Flight</label>
+            </div>
+          </div>
+          <div class="basis-1/4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="mr-2"
+                id="hasParkour"
+                v-model="hasParkour"
+              />
+              <label class="ml-2" for="hasParkour">Has Parkour</label>
+            </div>
+          </div>
+          <div class="basis-1/4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="mr-2"
+                id="hasTeleport"
+                v-model="hasTeleport"
+              />
+              <label class="ml-2" for="hasTeleport">Has Teleport</label>
+            </div>
+          </div>
+          <div class="basis-1/4">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="mr-2"
+                id="hasCrossCountry"
+                v-model="hasCrossCountry"
+              />
+              <label
+                class="ml-2"
+                for="hasCrossCountry"
+                :title="'Ignores difficult terrain when enabled'"
+                >Cross-Country Running</label
+              >
+            </div>
           </div>
         </div>
-        <div class="basis-1/4">
-          <div class="flex items-center">
+        <div v-if="speeds.walking" class="mt-2 p-2 bg-gray-100 border rounded">
+          <div>
+            Walking: {{ speeds.walking }} ft | Acrobatics:
+            {{ speeds.acrobatics }} ft | Swimming: {{ speeds.swimming }} ft
+          </div>
+          <template v-if="speeds.flying">
+            | Flying: {{ speeds.flying }} ft</template
+          >
+          <template v-if="speeds.burrowing">
+            | Burrow: {{ speeds.burrowing }} ft</template
+          >
+        </div>
+      </fieldset>
+
+      <!-- ─── Senses ────────────────────────────────────────────────── -->
+      <fieldset class="border p-2 mb-3">
+        <legend class="font-bold">Senses (Perception)</legend>
+
+        <!-- Row 1: Sight and Hearing -->
+        <div class="flex gap-2 mb-2">
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Sight Level</label>
             <input
-              type="checkbox"
-              class="mr-2"
-              id="hasTeleport"
-              v-model="hasTeleport"
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="sightLevel"
+              min="0"
+              max="10"
             />
-            <label class="ml-2" for="hasTeleport">Has Teleport</label>
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Sight Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="sightBonus"
+            />
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Hearing Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="hearingLevel"
+              min="0"
+              max="10"
+            />
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Hearing Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="hearingBonus"
+            />
           </div>
         </div>
-        <div class="basis-1/4">
-          <div class="flex items-center">
+
+        <!-- Row 2: Smell and Taste -->
+        <div class="flex gap-2 mb-2">
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Smell Level</label>
             <input
-              type="checkbox"
-              class="mr-2"
-              id="hasCrossCountry"
-              v-model="hasCrossCountry"
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="smellLevel"
+              min="0"
+              max="10"
             />
-            <label
-              class="ml-2"
-              for="hasCrossCountry"
-              :title="'Ignores difficult terrain when enabled'"
-              >Cross-Country Running</label
-            >
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Smell Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="smellBonus"
+            />
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Taste Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="tasteLevel"
+              min="0"
+              max="10"
+            />
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Taste Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="tasteBonus"
+            />
           </div>
         </div>
-      </div>
-      <div v-if="speeds.walking" class="mt-2 p-2 bg-gray-100 border rounded">
-        <div>
-          Walking: {{ speeds.walking }} ft | Acrobatics:
-          {{ speeds.acrobatics }} ft | Swimming: {{ speeds.swimming }} ft
-        </div>
-        <template v-if="speeds.flying">
-          | Flying: {{ speeds.flying }} ft</template
-        >
-        <template v-if="speeds.burrowing">
-          | Burrow: {{ speeds.burrowing }} ft</template
-        >
-      </div>
-    </fieldset>
 
-    <!-- ─── Senses ────────────────────────────────────────────────── -->
-    <fieldset class="border p-2 mb-3">
-      <legend class="font-bold">Senses (Perception)</legend>
-
-      <!-- Row 1: Sight and Hearing -->
-      <div class="flex gap-2 mb-2">
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Sight Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="sightLevel"
-            min="0"
-            max="10"
-          />
+        <!-- Row 3: Touch -->
+        <div class="flex gap-2">
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Touch Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="touchLevel"
+              min="0"
+              max="10"
+            />
+          </div>
+          <div class="basis-1/4">
+            <label class="block mb-1 font-medium">Touch Bonus</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="touchBonus"
+            />
+          </div>
         </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Sight Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="sightBonus"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Hearing Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="hearingLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Hearing Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="hearingBonus"
-          />
-        </div>
-      </div>
-
-      <!-- Row 2: Smell and Taste -->
-      <div class="flex gap-2 mb-2">
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Smell Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="smellLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Smell Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="smellBonus"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Taste Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="tasteLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Taste Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="tasteBonus"
-          />
-        </div>
-      </div>
-
-      <!-- Row 3: Touch -->
-      <div class="flex gap-2">
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Touch Level</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="touchLevel"
-            min="0"
-            max="10"
-          />
-        </div>
-        <div class="basis-1/4">
-          <label class="block mb-1 font-medium">Touch Bonus</label>
-          <input
-            type="number"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="touchBonus"
-          />
-        </div>
-      </div>
-    </fieldset>
+      </fieldset>
+    </template>
   </div>
 </template>
 
@@ -462,6 +465,11 @@ const system = inject<DwSystem>("reactiveSystem")!;
 const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 void sheet;
+
+// Character types (pc, npc, ally, boss) have skills; enemies don't
+const hasSkills = computed(
+  () => "skills" in system && system.skills !== undefined
+);
 
 const elementChoices = [
   { key: "no_element", label: "No Element" },
