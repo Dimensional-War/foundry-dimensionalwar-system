@@ -260,13 +260,37 @@
     <div v-if="system.gauges.hasLimitBreak" class="flex flex-wrap gap-1 mb-2">
       <div class="basis-2/12 my-2 font-bold">Limit Break:</div>
       <div class="basis-5/12 ml-1">
-        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+        <div
+          class="relative h-6 rounded overflow-hidden transition-colors"
+          :class="{
+            'bg-transparent': limitBreakFullBars === 0,
+            'bg-green-600': limitBreakFullBars === 1,
+            'bg-yellow-500': limitBreakFullBars === 2,
+            'bg-orange-500': limitBreakFullBars === 3,
+            'bg-red-500': limitBreakFullBars >= 4
+          }"
+        >
+          <!-- Current bar being filled (full width) -->
           <div
-            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-yellow-500"
+            v-if="limitBreakPct > 0 && limitBreakFullBars < 4"
+            class="absolute inset-y-0 left-0 transition-all"
+            :class="{
+              'bg-green-600': limitBreakFullBars === 0,
+              'bg-yellow-500': limitBreakFullBars === 1,
+              'bg-orange-500': limitBreakFullBars === 2,
+              'bg-red-500': limitBreakFullBars === 3
+            }"
             :style="`width: ${limitBreakPct}%`"
+          ></div>
+
+          <!-- Text overlay -->
+          <div
+            class="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
-            <span class="inline-block mx-auto px-2">
-              {{ limitBreakPct }}%
+            <span
+              class="inline-block px-2 py-0.5 text-sm font-semibold text-white rounded"
+            >
+              Bars: {{ limitBreakFullBars }} / 4 ({{ limitBreakPct }}%)
             </span>
           </div>
         </div>
@@ -278,8 +302,11 @@
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             v-model.number="spendLbAmount"
             min="0"
-            :title="'Amount of Limit Break to spend'"
-            placeholder="0"
+            :max="limitBreakFullBars"
+            :title="
+              'Number of full bars to spend (max: ' + limitBreakFullBars + ')'
+            "
+            placeholder="Bars"
           />
           <button
             type="button"
@@ -547,9 +574,16 @@ const trancePct = computed(() => {
 
 /** Max limit break = max_hp * 4 */
 const limitBreakMax = computed(() => system.resources.hp.max * 4);
+const limitBreakBarSize = computed(() => system.resources.hp.max);
+const limitBreakFullBars = computed(() =>
+  Math.floor(system.gauges.limitBreak / limitBreakBarSize.value)
+);
 const limitBreakPct = computed(() => {
-  if (!limitBreakMax.value) return 0;
-  return Math.round((system.gauges.limitBreak / limitBreakMax.value) * 100);
+  if (!limitBreakBarSize.value) return 0;
+  // When all 4 bars are full, show 100% instead of 0%
+  if (limitBreakFullBars.value >= 4) return 100;
+  const remainder = system.gauges.limitBreak % limitBreakBarSize.value;
+  return Math.round((remainder / limitBreakBarSize.value) * 100);
 });
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -835,13 +869,24 @@ async function activateTrance() {
 }
 
 async function spendLimitBreak() {
-  const amount = spendLbAmount.value;
-  if (!amount) return;
+  const numBars = spendLbAmount.value;
+  if (!numBars || numBars <= 0) return;
+
+  // Can only spend full bars that are complete
+  const maxBars = limitBreakFullBars.value;
+  if (numBars > maxBars) {
+    ui.notifications?.warn(`Can only spend ${maxBars} full bar(s).`);
+    return;
+  }
+
   // Save old value for undo
   pushHistory("spendLimitBreak", {
     "gauges.limitBreak": system.gauges.limitBreak
   });
-  const newVal = Math.max(0, system.gauges.limitBreak - amount);
+
+  // Spend full bars (numBars × bar size)
+  const amountToSpend = numBars * limitBreakBarSize.value;
+  const newVal = Math.max(0, system.gauges.limitBreak - amountToSpend);
   system.gauges.limitBreak = newVal;
   spendLbAmount.value = 0;
   await sheet.saveSystem({ "gauges.limitBreak": newVal });
