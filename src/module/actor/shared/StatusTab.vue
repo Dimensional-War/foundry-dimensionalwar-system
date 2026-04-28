@@ -724,6 +724,15 @@ async function dealDamage(type: "physical" | "magical") {
     changes["gauges.limitBreak"] = system.gauges.limitBreak;
   }
 
+  // Track shield hits for undo
+  if (shieldUsed) {
+    changes["soak.shieldHitsLeft"] = shieldHitsLeft;
+    // Also track the armor array state before modification
+    if (system.armors) {
+      changes["armors"] = JSON.parse(JSON.stringify(system.armors));
+    }
+  }
+
   // Apply
   system.resources.hp.value = newHp;
   system.soak.shieldHitsLeft = newShieldHits;
