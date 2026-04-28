@@ -716,6 +716,14 @@ async function dealDamage(type: "physical" | "magical") {
 
   const changes: Record<string, unknown> = { "resources.hp.value": oldHp };
 
+  // Track gauge changes for undo
+  if (system.gauges.hasTrance) {
+    changes["gauges.trance"] = system.gauges.trance;
+  }
+  if (system.gauges.hasLimitBreak) {
+    changes["gauges.limitBreak"] = system.gauges.limitBreak;
+  }
+
   // Apply
   system.resources.hp.value = newHp;
   system.soak.shieldHitsLeft = newShieldHits;
@@ -811,6 +819,8 @@ async function activateTrance() {
     ui.notifications?.warn("Trance gauge is not full.");
     return;
   }
+  // Save old value for undo
+  pushHistory("activateTrance", { "gauges.trance": system.gauges.trance });
   system.gauges.trance = 0;
   await sheet.saveSystem({ "gauges.trance": 0 });
 }
@@ -818,6 +828,10 @@ async function activateTrance() {
 async function spendLimitBreak() {
   const amount = spendLbAmount.value;
   if (!amount) return;
+  // Save old value for undo
+  pushHistory("spendLimitBreak", {
+    "gauges.limitBreak": system.gauges.limitBreak
+  });
   const newVal = Math.max(0, system.gauges.limitBreak - amount);
   system.gauges.limitBreak = newVal;
   spendLbAmount.value = 0;
