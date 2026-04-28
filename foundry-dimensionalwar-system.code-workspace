@@ -14,6 +14,9 @@
 		},
 		{
 			"path": "../../modules/foundry-dw-dragruler-provider"
+		},
+		{
+			"path": "../../modules/foundry-area-measurement-overlay"
 		}
 	],
 	"settings": {}

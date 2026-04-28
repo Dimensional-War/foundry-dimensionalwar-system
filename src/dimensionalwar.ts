@@ -228,23 +228,6 @@ if (import.meta.env.DEV) {
   });
 }
 
-// Register CSB Import Settings Menu
-Hooks.once("init", () => {
-  if (!game.settings) return;
-
-  game.settings.registerMenu("dimensionalwar", "csbImport", {
-    name: "Import CSB Actors",
-    label: "Import CSB Actors",
-    hint: "Import actor files from Custom System Builder (CSB) legacy system",
-    icon: "fas fa-file-import",
-    restricted: true,
-    // @ts-expect-error - onClick is valid but not in v13 types yet
-    onClick: () => {
-      openCSBImportDialog();
-    }
-  });
-});
-
 // ─── Token HUD: Inject Perception Button ──────────────────────────────────────
 
 Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
