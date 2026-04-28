@@ -919,7 +919,6 @@ async function modifyGauge() {
     updates["gauges.limitBreak"] = newVal;
   }
 
-  gaugeMod.value = "";
   await sheet.saveSystem(updates);
 }
 
