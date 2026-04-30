@@ -17,6 +17,17 @@
             @import "tailwindcss/utilities.css";
         }
 
+        :not(.window-header, .controls-dropdown) h1,
+        :not(.window-header, .controls-dropdown) h2,
+        :not(.window-header, .controls-dropdown) h3,
+        :not(.window-header, .controls-dropdown) h4,
+        :not(.window-header, .controls-dropdown) h5,
+        :not(.window-header, .controls-dropdown) h6 {
+            color: #444;
+            margin-top: 0.5em;
+            margin-bottom: 0.25em;
+        }
+
         .controls-dropdown .control {
             color: var(--button-text-color);
         }

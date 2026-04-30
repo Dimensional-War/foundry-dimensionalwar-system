@@ -53,19 +53,19 @@ src/
 
 ### Actor Types & Data Models
 
-| Type | Data Model | Extends |
-|------|-----------|---------|
-| `pc` | `PcDataModel` | `CharacterDataModel` + `customs[]` |
-| `npc` | `NpcDataModel` | `CharacterDataModel` |
-| `ally` | `AllyDataModel` | `CharacterDataModel` + `customs[]` |
-| `enemy` | `EnemyDataModel` | `ActorDataModel` + `rolls[]` |
-| `boss` | `BossDataModel` | `CharacterDataModel` |
+| Type    | Data Model       | Extends                            |
+| ------- | ---------------- | ---------------------------------- |
+| `pc`    | `PcDataModel`    | `CharacterDataModel` + `customs[]` |
+| `npc`   | `NpcDataModel`   | `CharacterDataModel`               |
+| `ally`  | `AllyDataModel`  | `CharacterDataModel` + `customs[]` |
+| `enemy` | `EnemyDataModel` | `CharacterDataModel`               |
+| `boss`  | `BossDataModel`  | `CharacterDataModel`               |
 
-**Inheritance:** `TypeDataModel → ActorDataModel → CharacterDataModel → {Pc, Npc, Ally, Boss}DataModel`
+**Inheritance:** `TypeDataModel → ActorDataModel → CharacterDataModel → {Pc, Npc, Ally, Enemy, Boss}DataModel`
 
-**`ActorDataModel` schema** (all actors share): `statistics` (6 stats: health/awareness/dexterity/strength/spirit/luck), `resources.hp/mp`, `combat`, `soak`, `gauges`, `elements`, `armors[]`, `actionHistory[]`, `rolls[]`
+**`ActorDataModel` schema** (all actors share): `statistics` (6 stats: health/awareness/dexterity/strength/spirit/luck), `resources.hp/mp`, `combat`, `soak`, `gauges`, `elements`, `armors[]`, `actionHistory[]`, `movementFlags`, `rolls[]`
 
-**`CharacterDataModel` adds:** `skills` schema with 5 categories: `movement`, `utility`, `combat`, `magic`, `artisan`
+**`CharacterDataModel` adds:** `skills` schema with 6 categories: `movement`, `senses`, `utility`, `combat`, `magic`, `artisan`, `fieldTraining`
 
 ---
 
@@ -82,11 +82,12 @@ src/
 
 ```typescript
 const reactiveSystem = inject("reactiveSystem"); // Reactive clone of actor.system (mutate for UI)
-const actor = inject("actor");                   // Real Foundry Actor document
-const sheet = inject("sheet");                   // Sheet instance
+const actor = inject("actor"); // Real Foundry Actor document
+const sheet = inject("sheet"); // Sheet instance
 ```
 
 **Critical:** Always use the real `actor` (not `reactiveSystem`) for:
+
 - Calling `actor.update(...)` to persist data
 - Reading `actor.name`, `actor.img`, `actor.type`
 - Any Foundry document method
@@ -126,7 +127,9 @@ This system uses **direct `Hooks.on/off`** — there is no HookManager like in t
 
 ```typescript
 // Store the callback reference for cleanup
-const myHookCallback = (actor: any) => { /* ... */ };
+const myHookCallback = (actor: any) => {
+  /* ... */
+};
 
 onMounted(() => {
   Hooks.on("updateActor", myHookCallback);
@@ -173,11 +176,11 @@ const roll = new Roll("1d20 + 5");
 
 Three kinds of skills exist in `CharacterDataModel`:
 
-| Kind | Schema Helper | Notes |
-|------|--------------|-------|
-| Simple | `Skill(fields)` | Just a `level` field |
-| With statistics | `SkillWithStatistics(fields)` | Level + array of per-stat bonus entries |
-| With specifier | `SkillWithSpecifier(fields)` | Level + string specifier; used as arrays for multi-instance skills (e.g. Breath Weapon) |
+| Kind            | Schema Helper                 | Notes                                                                                   |
+| --------------- | ----------------------------- | --------------------------------------------------------------------------------------- |
+| Simple          | `Skill(fields)`               | Just a `level` field                                                                    |
+| With statistics | `SkillWithStatistics(fields)` | Level + array of per-stat bonus entries                                                 |
+| With specifier  | `SkillWithSpecifier(fields)`  | Level + string specifier; used as arrays for multi-instance skills (e.g. Breath Weapon) |
 
 ## No Socket Implementation Yet
 

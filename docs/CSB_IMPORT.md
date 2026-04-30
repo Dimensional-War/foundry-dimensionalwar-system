@@ -51,21 +51,33 @@ The importer converts CSB data to the Dimensional War format:
 
 - **Actor Name**: Preserved from CSB file
 - **Actor Image**: Defaults to mystery-man icon if not specified
-- **Actor Type**: Auto-detected from template name:
-  - `_dwpc` → PC
-  - `_dwnpc` → NPC
-  - Names containing "boss", "lord", "king" → Boss
-  - Default → Enemy
+- **Actor Type**: Auto-detected using multiple strategies (in order of priority):
+  1. **Folder Path** (most reliable for bulk imports):
+     - Folder named `boss` or `bosses` → Boss
+     - Folder named `enemy` or `enemies` → Enemy
+     - Folder named `ally` or `allies` → Ally
+     - Folder named `pc`, `pcs`, `player`, or `players` → PC
+     - Folder named `npc`, `npcs`, or `non-player` → NPC
+  2. **Actor Name Patterns**:
+     - Names containing "boss", "lord", or "king" → Boss
+  3. **CSB Template Name**:
+     - `_dwpc` → PC
+     - `_dwnpc` → NPC
+  4. **Default**: NPC (if no matches found)
+
+**Note**: Folder detection uses exact segment matching, so a path like `monsters/npcs/dragon.json` correctly detects "npc" without false matches from "pc" substring.
 
 ### Movement Flags
 
 The importer extracts movement data from CSB hidden fields:
+
 - **Flight**: Detected from `hasFlight` field
 - **Burrowing**: Detected from `burrowingSpeed` field
 
 ### Default Values
 
 All actors are created with default values for:
+
 - Resources (HP, MP)
 - Statistics (Health, Awareness, Dexterity, Strength, Spirit, Luck)
 - Combat settings
@@ -86,9 +98,27 @@ All actors are created with default values for:
 ### ZIP Files
 
 - Must be a valid ZIP archive
-- Can contain JSON files in subdirectories (e.g., `enemies/bandit.json`)
+- Can contain JSON files in subdirectories for automatic type detection
+- **Recommended folder structure**:
+  ```
+  actors.zip
+  ├── pcs/
+  │   ├── John.json
+  │   └── Sarah.json
+  ├── npcs/
+  │   ├── Merchant.json
+  │   └── Guard.json
+  ├── enemies/
+  │   ├── Goblin.json
+  │   └── Orc.json
+  ├── bosses/
+  │   └── Dragon.json
+  └── allies/
+      └── Companion.json
+  ```
 - Files starting with `__MACOSX` are ignored
 - Only `.json` files are processed
+- Nested folders are supported (e.g., `monsters/enemies/undead/zombie.json` → Enemy)
 
 ## Troubleshooting
 

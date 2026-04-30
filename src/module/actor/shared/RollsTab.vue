@@ -1,7 +1,7 @@
 <template>
   <div class="dw-rolls-tab">
-    <!-- Perception Rolls Section -->
-    <div class="border rounded p-4 mb-4 bg-gray-50">
+    <!-- Perception Rolls Section (only for actors with skills) -->
+    <div v-if="hasSkills" class="border rounded p-4 mb-4 bg-gray-50">
       <h3 class="font-bold text-lg mb-3 text-gray-900">Perception Rolls</h3>
       <div class="grid grid-cols-3 gap-2">
         <button
@@ -67,8 +67,8 @@
       </div>
     </div>
 
-    <!-- Movement Rolls Section -->
-    <div class="border rounded p-4 mb-4 bg-gray-50">
+    <!-- Movement Rolls Section (only for actors with skills) -->
+    <div v-if="hasSkills" class="border rounded p-4 mb-4 bg-gray-50">
       <h3 class="font-bold text-lg mb-3 text-gray-900">Movement Rolls</h3>
       <div class="grid grid-cols-2 gap-2">
         <!-- @ts-expect-error - SystemActor has walkingSpeed -->
@@ -232,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from "vue";
+import { inject, computed } from "vue";
 import { rollPerceptionCheck } from "../../utils/token-hud";
 import type { SystemActor as SystemActorType } from "../../documents";
 
@@ -247,6 +247,10 @@ type RollEntry = {
 
 type DwSystem = {
   rolls: RollEntry[];
+  skills?: {
+    movement?: Record<string, any>;
+    senses?: Record<string, any>;
+  };
   movementFlags?: {
     hasFlight: boolean;
     hasParkour: boolean;
@@ -266,6 +270,11 @@ type SystemActor = Actor & {
 
 const system = inject<DwSystem>("reactiveSystem")!;
 const actor = inject<SystemActor>("actor")!;
+
+// Check if actor has skills (CharacterDataModel-based actors only)
+const hasSkills = computed(() => {
+  return !!(system.skills?.movement && system.skills?.senses);
+});
 
 const categories = [
   "Offensive",

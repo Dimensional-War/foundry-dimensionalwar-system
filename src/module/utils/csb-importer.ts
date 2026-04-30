@@ -101,27 +101,36 @@ function determineActorType(
   const lowerActorName = actorName.toLowerCase();
   const lowerFolderPath = folderPath?.toLowerCase() || "";
 
+  // Split folder path into individual segments for exact matching
+  const folderSegments = lowerFolderPath
+    .split("/")
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  // Helper function to check if any folder segment matches keywords
+  const hasSegment = (...keywords: string[]): boolean => {
+    return folderSegments.some(segment =>
+      keywords.some(keyword => segment === keyword || segment === keyword + "s")
+    );
+  };
+
   // Check folder path first (most reliable for bulk imports)
-  if (lowerFolderPath.includes("pc") || lowerFolderPath.includes("player")) {
-    return "pc";
-  }
-  if (
-    lowerFolderPath.includes("npc") ||
-    lowerFolderPath.includes("non-player")
-  ) {
-    return "npc";
-  }
-  if (lowerFolderPath.includes("ally") || lowerFolderPath.includes("allies")) {
-    return "ally";
-  }
-  if (lowerFolderPath.includes("boss") || lowerFolderPath.includes("bosses")) {
+  // Check in order of specificity: boss > enemy > ally > pc > npc
+  // (More specific types first to avoid false matches)
+  if (hasSegment("boss", "bosses")) {
     return "boss";
   }
-  if (
-    lowerFolderPath.includes("enemy") ||
-    lowerFolderPath.includes("enemies")
-  ) {
+  if (hasSegment("enemy", "enemies")) {
     return "enemy";
+  }
+  if (hasSegment("ally", "allies")) {
+    return "ally";
+  }
+  if (hasSegment("pc", "pcs", "player", "players")) {
+    return "pc";
+  }
+  if (hasSegment("npc", "npcs", "non-player")) {
+    return "npc";
   }
 
   // Check actor name patterns for boss/enemy
@@ -133,7 +142,7 @@ function determineActorType(
     return "boss";
   }
 
-  // Check CSB template name (stored in csbData.name field for template files)
+  // Check CSB template name (stored in csbData.type field for template files)
   if (csbTemplateName === "_dwpc") {
     return "pc";
   }
