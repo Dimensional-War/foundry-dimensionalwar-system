@@ -383,13 +383,15 @@ Hooks.once("ready", () => {
 // ─── Add CSB Import Button to Actors Directory ───────────────────────────────
 
 Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement) => {
-  // Add import button to the directory header
+  if (!element) return;
+
   const header = element.querySelector(".directory-header");
   if (!header) return;
 
   // Check if button already exists
   if (header.querySelector(".csb-import-btn")) return;
 
+  // Create import button
   const importBtn = document.createElement("button");
   importBtn.className = "csb-import-btn";
   importBtn.title = "Import CSB Actors";
@@ -400,14 +402,27 @@ Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement) => {
     openCSBImportDialog();
   });
 
-  // Add button after the create button
+  // Try multiple insertion strategies
+  let inserted = false;
+
+  // Strategy 1: After create button
   const createBtn = header.querySelector('[data-action="createDocument"]');
   if (createBtn && createBtn.parentElement) {
     createBtn.parentElement.insertBefore(importBtn, createBtn.nextSibling);
-  } else {
+    inserted = true;
+  }
+
+  // Strategy 2: In action-buttons container
+  if (!inserted) {
     const actionButtons = header.querySelector(".action-buttons");
     if (actionButtons) {
       actionButtons.appendChild(importBtn);
+      inserted = true;
     }
+  }
+
+  // Strategy 3: Directly to header as fallback
+  if (!inserted) {
+    header.appendChild(importBtn);
   }
 });

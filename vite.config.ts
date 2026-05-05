@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => ({
   },
 
   define: {
-    "process.env": {}
+    "process.env.NODE_ENV": JSON.stringify(mode)
   },
 
   server: {
