@@ -13,7 +13,7 @@ jobs:
       # get part of the tag after the `v`
       - name: Extract tag version number
         id: get_version
-        uses: battila7/get-version-action@v2
+        uses: maltoze/get-version-action@v1
 
       - name: Run vite build step
         uses: actions/setup-node@v4
