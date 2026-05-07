@@ -78,18 +78,18 @@
             totalMagical
           }})</span
         >
-        <br v-if="system.soak.shieldSoak > 0" />
+        <br v-if="currentShieldSoak > 0" />
         <span
-          v-if="system.soak.shieldSoak > 0"
+          v-if="currentShieldSoak > 0"
           title="Shield adds to soak for limited hits"
           :class="{
             'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
             'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
           }"
-          ><span class="font-bold">Shield: </span>+{{
-            system.soak.shieldSoak
+          ><span class="font-bold">Shield: </span>+{{ currentShieldSoak }} ({{
+            system.soak.shieldHitsLeft
           }}
-          ({{ system.soak.shieldHitsLeft }} hits)</span
+          hits)</span
         >
       </div>
       <div class="flex-1">
@@ -105,7 +105,7 @@
             @click="resetShield"
             :title="'Reset shield hits to max'"
           >
-            Shield ({{ system.soak.shieldHitsLeft }})
+            Shield ({{ system.soak.shieldHitsLeft }}/{{ maxShieldHits }})
           </button>
           <button
             type="button"
@@ -542,25 +542,62 @@ const mpPercent = computed(() => {
   return Math.round((value / max) * 100 * 100) / 100;
 });
 
+// Compute equipped armor values from the armor array (non-enemies only)
+const equippedArmor = computed(() => {
+  return system.armors?.find(a => a.equipped) ?? null;
+});
+
+const armoredPhysical = computed(() => {
+  // For enemies: use stored value; for others: compute from equipped armor
+  if (!system.armors || system.armors.length === 0) {
+    return system.soak.armoredPhysical;
+  }
+  return equippedArmor.value?.physicalSoak ?? 0;
+});
+
+const armoredMagical = computed(() => {
+  // For enemies: use stored value; for others: compute from equipped armor
+  if (!system.armors || system.armors.length === 0) {
+    return system.soak.armoredMagical;
+  }
+  return equippedArmor.value?.magicalSoak ?? 0;
+});
+
+const currentShieldSoak = computed(() => {
+  // For enemies: use stored value; for others: compute from equipped armor
+  if (!system.armors || system.armors.length === 0) {
+    return system.soak.shieldSoak;
+  }
+  return equippedArmor.value?.shieldSoak ?? 0;
+});
+
+const maxShieldHits = computed(() => {
+  // For enemies: use stored value; for others: compute from equipped armor
+  if (!system.armors || system.armors.length === 0) {
+    return system.soak.shieldHitsMax;
+  }
+  return equippedArmor.value?.shieldHitsMax ?? 0;
+});
+
 const totalPhysical = computed(() => {
-  let total = system.soak.physicalBase + system.soak.armoredPhysical;
+  let total = system.soak.physicalBase + armoredPhysical.value;
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
-    system.soak.shieldSoak > 0
+    currentShieldSoak.value > 0
   ) {
-    total += system.soak.shieldSoak;
+    total += currentShieldSoak.value;
   }
   return total;
 });
 const totalMagical = computed(() => {
-  let total = system.soak.magicalBase + system.soak.armoredMagical;
+  let total = system.soak.magicalBase + armoredMagical.value;
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
-    system.soak.shieldSoak > 0
+    currentShieldSoak.value > 0
   ) {
-    total += system.soak.shieldSoak;
+    total += currentShieldSoak.value;
   }
   return total;
 });
@@ -658,21 +695,18 @@ async function dealDamage(type: "physical" | "magical") {
   const {
     physicalBase: pSoak,
     magicalBase: mSoak,
-    armoredPhysical,
-    armoredMagical,
-    shieldSoak,
     shieldHitsLeft
   } = system.soak;
   // Calculate total soak including shield (if available)
-  let totalPSoak = pSoak + armoredPhysical;
-  let totalMSoak = mSoak + armoredMagical;
+  let totalPSoak = pSoak + armoredPhysical.value;
+  let totalMSoak = mSoak + armoredMagical.value;
   let newShieldHits = shieldHitsLeft;
   let shieldUsed = false;
 
   // Add shield to soak if available and not EMP'd
-  if (!system.combat.emp && shieldHitsLeft > 0 && shieldSoak > 0) {
-    totalPSoak += shieldSoak;
-    totalMSoak += shieldSoak;
+  if (!system.combat.emp && shieldHitsLeft > 0 && currentShieldSoak.value > 0) {
+    totalPSoak += currentShieldSoak.value;
+    totalMSoak += currentShieldSoak.value;
     shieldUsed = true;
   }
 
@@ -833,7 +867,7 @@ async function undoLastAction() {
 }
 
 async function resetShield() {
-  const max = system.soak.shieldHitsMax;
+  const max = maxShieldHits.value;
   system.soak.shieldHitsLeft = max;
   await sheet.saveSystem({ "soak.shieldHitsLeft": max });
 }

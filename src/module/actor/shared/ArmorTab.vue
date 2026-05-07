@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed } from "vue";
+import { inject, computed, watch } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
 
 type ArmorEntry = {
@@ -284,6 +284,40 @@ void sheet;
 
 // @ts-expect-error - Foundry types don't include our custom actor types
 const isEnemy = computed(() => actor.type === "enemy");
+
+// Watch for equipped armor's max shield hits changing - clamp current hits if needed
+watch(
+  () => system.armors,
+  () => {
+    if (isEnemy.value) return; // Skip for enemies
+
+    const equipped = system.armors?.find(a => a.equipped);
+    if (equipped && equipped.shieldHitsMax < system.soak.shieldHitsLeft) {
+      // Max was reduced below current - clamp current to max
+      system.soak.shieldHitsLeft = equipped.shieldHitsMax;
+      sheet.saveSystem({
+        "soak.shieldHitsLeft": equipped.shieldHitsMax
+      });
+    }
+  },
+  { deep: true }
+);
+
+// Watch for enemy's direct shieldHitsMax changes - clamp current hits if needed
+watch(
+  () => system.soak.shieldHitsMax,
+  newMax => {
+    if (!isEnemy.value) return; // Only for enemies
+
+    if (newMax < system.soak.shieldHitsLeft) {
+      // Max was reduced below current - clamp current to max
+      system.soak.shieldHitsLeft = newMax;
+      sheet.saveSystem({
+        "soak.shieldHitsLeft": newMax
+      });
+    }
+  }
+);
 
 function save(path: string, value: unknown) {
   const keys = path.split(".");
@@ -330,23 +364,19 @@ function equipArmor(idx: number) {
     a.equipped = !wasEquipped && i === idx;
   });
 
-  // Recalculate active soak values
-  const equipped = system.armors.find(a => a.equipped);
-  system.soak.armoredPhysical = equipped?.physicalSoak ?? 0;
-  system.soak.armoredMagical = equipped?.magicalSoak ?? 0;
-  system.soak.shield = equipped?.shield ?? 0;
-  system.soak.shieldSoak = equipped?.shieldSoak ?? 0;
-  system.soak.shieldHitsMax = equipped?.shieldHitsMax ?? 0;
-  system.soak.shieldHitsLeft = equipped?.shield ?? 0; // Use current hits, not max
-
-  sheet.saveSystem({
-    armors: JSON.parse(JSON.stringify(system.armors)),
-    "soak.armoredPhysical": system.soak.armoredPhysical,
-    "soak.armoredMagical": system.soak.armoredMagical,
-    "soak.shield": system.soak.shield,
-    "soak.shieldSoak": system.soak.shieldSoak,
-    "soak.shieldHitsMax": system.soak.shieldHitsMax,
-    "soak.shieldHitsLeft": system.soak.shieldHitsLeft
-  });
+  // Reset shield hits to max when equipping armor
+  if (!wasEquipped) {
+    const equipped = system.armors[idx];
+    system.soak.shieldHitsLeft = equipped.shieldHitsMax;
+    sheet.saveSystem({
+      armors: JSON.parse(JSON.stringify(system.armors)),
+      "soak.shieldHitsLeft": equipped.shieldHitsMax
+    });
+  } else {
+    // Just save the armors array
+    sheet.saveSystem({
+      armors: JSON.parse(JSON.stringify(system.armors))
+    });
+  }
 }
 </script>
