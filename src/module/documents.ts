@@ -1,3 +1,5 @@
+import { ActorType } from "./enums";
+
 export class SystemActor extends Actor {
   /**
    * Pre-create hook to set default token settings for actors
@@ -15,12 +17,13 @@ export class SystemActor extends Actor {
       bar2: { attribute: "resources.mp" }
     };
 
-    // PC and Ally: bars always visible (player-controlled characters)
-    if (data.type === "pc" || data.type === "ally") {
+    // PC and Ally: bars always visible, linked to owning actor (player-controlled characters)
+    if (data.type === ActorType.Pc || data.type === ActorType.Ally) {
       this.updateSource({
         prototypeToken: {
           ...prototypeToken,
-          displayBars: CONST.TOKEN_DISPLAY_MODES.ALWAYS
+          displayBars: CONST.TOKEN_DISPLAY_MODES.ALWAYS,
+          actorLink: true
         }
       });
     }

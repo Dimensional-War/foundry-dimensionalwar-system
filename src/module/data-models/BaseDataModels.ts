@@ -331,7 +331,8 @@ export class ActorDataModel extends TypeDataModel<
           integer: true,
           min: 0,
           initial: 0
-        })
+        }),
+        resolveOfAges: new BooleanField({ required: false, initial: false })
       }),
       gauges: new SchemaField({
         hasTrance: new BooleanField({ required: true, initial: false }),

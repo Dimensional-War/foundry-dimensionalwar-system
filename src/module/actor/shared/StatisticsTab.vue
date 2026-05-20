@@ -66,6 +66,16 @@
           />
         </div>
       </div>
+      <div class="flex items-center gap-2 mt-2">
+        <input
+          type="checkbox"
+          id="resolveOfAges"
+          v-model="system.soak.resolveOfAges"
+        />
+        <label for="resolveOfAges" class="font-medium"
+          >Primary Characteristic: Resolve of Ages</label
+        >
+      </div>
     </fieldset>
 
     <!-- ─── Elements ─────────────────────────────────────────────── -->
@@ -428,6 +438,7 @@ type DwSystem = {
     shield: number;
     shieldHitsLeft: number;
     shieldHitsMax: number;
+    resolveOfAges: boolean;
   };
   gauges: {
     hasTrance: boolean;

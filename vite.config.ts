@@ -102,7 +102,7 @@ export default defineConfig(({ mode }) => ({
     outDir: resolve(__dirname + "/dist"),
     sourcemap: true,
     target: ["es2022"],
-    manifest: true, // Generate manifest.json for hashed filenames
+    manifest: false,
     lib: {
       name: "dimensionalwar",
       entry: "./src/dimensionalwar.ts",

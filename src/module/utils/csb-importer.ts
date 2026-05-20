@@ -3,6 +3,7 @@
  */
 
 import JSZip from "jszip";
+import { ActorType } from "../enums";
 
 interface CSBHiddenField {
   name: string;
@@ -326,10 +327,10 @@ function convertCSBToActor(
 
   // Add skills for character types (pc, npc, ally, boss)
   if (
-    actorType === "pc" ||
-    actorType === "npc" ||
-    actorType === "ally" ||
-    actorType === "boss"
+    actorType === ActorType.Pc ||
+    actorType === ActorType.Npc ||
+    actorType === ActorType.Ally ||
+    actorType === ActorType.Boss
   ) {
     // @ts-expect-error - skills exists in character actor types
     actorData.system!.skills = {

@@ -364,8 +364,8 @@ function equipArmor(idx: number) {
     a.equipped = !wasEquipped && i === idx;
   });
 
-  // Reset shield hits to max when equipping armor
   if (!wasEquipped) {
+    // Reset shield hits to max when equipping armor
     const equipped = system.armors[idx];
     system.soak.shieldHitsLeft = equipped.shieldHitsMax;
     sheet.saveSystem({
@@ -373,9 +373,11 @@ function equipArmor(idx: number) {
       "soak.shieldHitsLeft": equipped.shieldHitsMax
     });
   } else {
-    // Just save the armors array
+    // Reset shield hits to 0 when unequipping armor
+    system.soak.shieldHitsLeft = 0;
     sheet.saveSystem({
-      armors: JSON.parse(JSON.stringify(system.armors))
+      armors: JSON.parse(JSON.stringify(system.armors)),
+      "soak.shieldHitsLeft": 0
     });
   }
 }

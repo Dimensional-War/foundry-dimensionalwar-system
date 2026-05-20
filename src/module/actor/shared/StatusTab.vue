@@ -439,6 +439,7 @@ type DwSystem = {
     shieldSoak: number;
     shieldHitsLeft: number;
     shieldHitsMax: number;
+    resolveOfAges?: boolean;
   };
   gauges: {
     hasTrance: boolean;
@@ -580,7 +581,11 @@ const maxShieldHits = computed(() => {
 });
 
 const totalPhysical = computed(() => {
-  let total = system.soak.physicalBase + armoredPhysical.value;
+  const basePhysical =
+    system.soak.resolveOfAges && !equippedArmor.value
+      ? system.soak.physicalBase * 2
+      : system.soak.physicalBase;
+  let total = basePhysical + armoredPhysical.value;
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
@@ -591,7 +596,11 @@ const totalPhysical = computed(() => {
   return total;
 });
 const totalMagical = computed(() => {
-  let total = system.soak.magicalBase + armoredMagical.value;
+  const baseMagical =
+    system.soak.resolveOfAges && !equippedArmor.value
+      ? system.soak.magicalBase * 2
+      : system.soak.magicalBase;
+  let total = baseMagical + armoredMagical.value;
   if (
     !system.combat.emp &&
     system.soak.shieldHitsLeft > 0 &&
@@ -697,9 +706,13 @@ async function dealDamage(type: "physical" | "magical") {
     magicalBase: mSoak,
     shieldHitsLeft
   } = system.soak;
+  // Apply Resolve of Ages doubling when no armor is equipped
+  const roaActive = system.soak.resolveOfAges && !equippedArmor.value;
+  const effectivePSoak = roaActive ? pSoak * 2 : pSoak;
+  const effectiveMSoak = roaActive ? mSoak * 2 : mSoak;
   // Calculate total soak including shield (if available)
-  let totalPSoak = pSoak + armoredPhysical.value;
-  let totalMSoak = mSoak + armoredMagical.value;
+  let totalPSoak = effectivePSoak + armoredPhysical.value;
+  let totalMSoak = effectiveMSoak + armoredMagical.value;
   let newShieldHits = shieldHitsLeft;
   let shieldUsed = false;
 
