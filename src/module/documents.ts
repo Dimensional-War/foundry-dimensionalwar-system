@@ -59,6 +59,23 @@ export class SystemActor extends Actor {
     mp.value = Math.clamp(mp.value, mp.min, mp.max);
   }
 
+  override prepareBaseData(): void {
+    super.prepareBaseData();
+    const system = this.system as any;
+
+    // Clear speeds so the getters below compute fresh from skills,
+    // then seed system.speeds with those base values so Active Effects
+    // (applied after prepareBaseData) can ADD/OVERRIDE them.
+    system.speeds = undefined;
+    system.speeds = {
+      walking: this.walkingSpeed,
+      acrobatics: this.acrobaticsSpeed,
+      swimming: this.swimmingSpeed,
+      burrowing: this.burrowingSpeed,
+      flying: this.flyingSpeed
+    };
+  }
+
   /**
    * Get the skill level from actor.system.skills.movement[skillName]
    * Handles both simple structure {level, bonus} and complex structure with statistics array
@@ -82,45 +99,55 @@ export class SystemActor extends Actor {
     return 20 + Math.ceil(skillLevel / 3) * 5;
   }
 
-  /**
-   * Get the walking speed based on Athletics skill level
-   */
   get walkingSpeed(): number {
-    const athleticsLevel = this.getMovementSkillLevel("Athletics");
-    return this.calculateSpeedFromLevel(athleticsLevel);
+    const speeds = (this.system as any)?.speeds;
+    if (speeds?.walking !== undefined) return speeds.walking;
+    return this.calculateSpeedFromLevel(
+      this.getMovementSkillLevel("Athletics")
+    );
+  }
+  set walkingSpeed(value: number) {
+    (this.system as any).speeds.walking = value;
   }
 
-  /**
-   * Get the acrobatics movement speed based on Acrobatics skill level
-   */
   get acrobaticsSpeed(): number {
-    const acrobaticsLevel = this.getMovementSkillLevel("Acrobatics");
-    return this.calculateSpeedFromLevel(acrobaticsLevel);
+    const speeds = (this.system as any)?.speeds;
+    if (speeds?.acrobatics !== undefined) return speeds.acrobatics;
+    return this.calculateSpeedFromLevel(
+      this.getMovementSkillLevel("Acrobatics")
+    );
+  }
+  set acrobaticsSpeed(value: number) {
+    (this.system as any).speeds.acrobatics = value;
   }
 
-  /**
-   * Get the swimming speed based on Swimming skill level
-   */
   get swimmingSpeed(): number {
-    const swimmingLevel = this.getMovementSkillLevel("Swimming");
-    return this.calculateSpeedFromLevel(swimmingLevel);
+    const speeds = (this.system as any)?.speeds;
+    if (speeds?.swimming !== undefined) return speeds.swimming;
+    return this.calculateSpeedFromLevel(this.getMovementSkillLevel("Swimming"));
+  }
+  set swimmingSpeed(value: number) {
+    (this.system as any).speeds.swimming = value;
   }
 
-  /**
-   * Get the burrowing speed based on the burrowing flag level
-   */
   get burrowingSpeed(): number {
     const system = this.system as any;
+    if (system?.speeds?.burrowing !== undefined) return system.speeds.burrowing;
     const burrowingLevel = system?.movementFlags?.burrowing ?? 0;
     return burrowingLevel > 0
       ? this.calculateSpeedFromLevel(burrowingLevel)
       : 0;
   }
+  set burrowingSpeed(value: number) {
+    (this.system as any).speeds.burrowing = value;
+  }
 
-  /**
-   * Get the flying speed (same as walking speed)
-   */
   get flyingSpeed(): number {
+    const speeds = (this.system as any)?.speeds;
+    if (speeds?.flying !== undefined) return speeds.flying;
     return this.walkingSpeed;
+  }
+  set flyingSpeed(value: number) {
+    (this.system as any).speeds.flying = value;
   }
 }

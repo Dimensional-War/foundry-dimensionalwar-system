@@ -28,6 +28,13 @@ import { DwRoll } from "./module/rolling/DwRoll";
 import { DwRollParser } from "./module/rolling/DwRollParser";
 import { DwSkillDiceTerm } from "./module/rolling/DwSkillDiceTerm";
 import { openCSBImportDialog } from "./module/utils/csb-import-dialog";
+import { VueDialog } from "./module/applications/vue-dialog";
+import DamageDialog from "./module/applications/dialogs/DamageDialog.vue";
+import { calcActorSoak, applyDamageToActor } from "./module/utils/apply-damage";
+import type {
+  ApplyDamageOptions,
+  ApplyDamageResult
+} from "./module/utils/apply-damage";
 
 const initHandler = () => {
   CONFIG.debug.rollParsing = false; // Enable debug logging for roll parsing
@@ -425,4 +432,137 @@ Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement) => {
   if (!inserted) {
     header.appendChild(importBtn);
   }
+});
+
+// ─── game.dimensionalwar: Public API for macros ──────────────────────────────
+
+/** socketlib socket instance, set once socketlib signals ready. */
+let dwSocket: any = null;
+
+/**
+ * Socket handler — always runs on the active GM client.
+ * Resolves the actor from scene+token (unlinked) or actorId (linked),
+ * then applies damage so permission checks are always satisfied.
+ */
+async function socketApplyDamage(data: {
+  sceneId: string | null;
+  tokenId: string | null;
+  actorId: string | null;
+  rawDamage: number;
+  type: "physical" | "magical" | "unsoakable";
+  piercing: number;
+  hits: number;
+}): Promise<ApplyDamageResult> {
+  let actor: SystemActor | undefined;
+  if (data.tokenId && data.sceneId) {
+    const scene = (game.scenes as any)?.get(data.sceneId);
+    const tokenDoc = scene?.tokens?.get(data.tokenId);
+    actor = tokenDoc?.actor as SystemActor | undefined;
+  } else if (data.actorId) {
+    actor = (game.actors as any)?.get(data.actorId) as SystemActor | undefined;
+  }
+  if (!actor) throw new Error(`[DW] socketApplyDamage: actor not found`);
+  return applyDamageToActor({
+    actor,
+    rawDamage: data.rawDamage,
+    type: data.type,
+    piercing: data.piercing,
+    hits: data.hits
+  });
+}
+
+// Register with socketlib once it's ready (fires on every client).
+// @ts-expect-error - socketlib.ready is not in the Foundry hook type definitions
+Hooks.once("socketlib.ready", () => {
+  dwSocket = (globalThis as any).socketlib.registerSystem("dimensionalwar");
+  dwSocket.register("applyDamage", socketApplyDamage);
+});
+
+/**
+ * Show the damage dialog for a given actor (targeted from the canvas).
+ * Calculates soak, applies final damage, and posts a chat card.
+ */
+async function showDamageDialog(actor: SystemActor): Promise<void> {
+  const result = (await VueDialog.show(
+    DamageDialog,
+    {
+      targetName: actor.name
+    },
+    {
+      window: { title: `Apply Damage: ${actor.name}` },
+      position: { width: 420 }
+    }
+  )) as {
+    rawDamage: number;
+    damageType: "physical" | "magical" | "unsoakable";
+    piercing: number;
+    hits: number;
+  } | null;
+
+  if (!result) return; // user cancelled
+
+  const { rawDamage, damageType, piercing, hits } = result;
+
+  // ─── Route through socketlib when the current user doesn't own the actor ──
+  // Unlinked enemy tokens are owned by nobody (players), so actor.update()
+  // would be blocked. executeAsGM delegates the update to the active GM.
+  let outcome: ApplyDamageResult;
+  const tokenDoc: any = (actor as any).token ?? null;
+  if (!actor.isOwner && dwSocket) {
+    outcome = (await dwSocket.executeAsGM("applyDamage", {
+      sceneId: tokenDoc?.parent?.id ?? null,
+      tokenId: tokenDoc?.id ?? null,
+      actorId: tokenDoc ? null : (actor.id ?? null),
+      rawDamage,
+      type: damageType,
+      piercing,
+      hits
+    })) as ApplyDamageResult;
+  } else {
+    outcome = await applyDamageToActor({
+      actor,
+      rawDamage,
+      type: damageType,
+      piercing,
+      hits
+    } as ApplyDamageOptions);
+  }
+
+  // ─── Chat card ────────────────────────────────────────────────────────────
+  const typeLabel =
+    damageType === "physical"
+      ? "Physical"
+      : damageType === "magical"
+        ? "Magical"
+        : "Unsoakable";
+  const hitsNote = outcome.hits > 1 ? ` ×${outcome.hits} hits` : "";
+  const piercingNote =
+    piercing > 0 && damageType !== "unsoakable" ? `, ${piercing} piercing` : "";
+
+  // Resolve attacker: prefer the first controlled token, fall back to assigned character
+  const controlledToken = (canvas as any)?.tokens?.controlled?.[0];
+  const attackerName: string =
+    controlledToken?.name ??
+    (game as any).user?.character?.name ??
+    (game as any).user?.name ??
+    "Unknown";
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker({ actor: actor as any }),
+    content: `<div style="border-left:3px solid #c00;padding:4px 8px;font-size:13px">
+      <strong>${attackerName}</strong> → <strong>${actor.name}</strong><br>
+      <strong>${rawDamage}</strong> <strong>${typeLabel}</strong> damage${piercingNote}${hitsNote}
+    </div>`
+  });
+}
+
+Hooks.once("ready", () => {
+  (game as any).dimensionalwar = {
+    /** Open the damage dialog for a given actor, then apply the result. */
+    showDamageDialog,
+    /** Calculate total effective soak for an actor system snapshot. */
+    calcActorSoak,
+    /** Directly apply damage to an actor without a dialog. */
+    applyDamageToActor
+  };
 });
