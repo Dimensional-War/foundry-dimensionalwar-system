@@ -33,7 +33,8 @@ import DamageDialog from "./module/applications/dialogs/DamageDialog.vue";
 import { calcActorSoak, applyDamageToActor } from "./module/utils/apply-damage";
 import type {
   ApplyDamageOptions,
-  ApplyDamageResult
+  ApplyDamageResult,
+  DamageElement
 } from "./module/utils/apply-damage";
 
 const initHandler = () => {
@@ -452,6 +453,7 @@ async function socketApplyDamage(data: {
   type: "physical" | "magical" | "unsoakable";
   piercing: number;
   hits: number;
+  elements: DamageElement[];
 }): Promise<ApplyDamageResult> {
   let actor: SystemActor | undefined;
   if (data.tokenId && data.sceneId) {
@@ -467,7 +469,8 @@ async function socketApplyDamage(data: {
     rawDamage: data.rawDamage,
     type: data.type,
     piercing: data.piercing,
-    hits: data.hits
+    hits: data.hits,
+    elements: data.elements
   });
 }
 
@@ -497,11 +500,12 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
     damageType: "physical" | "magical" | "unsoakable";
     piercing: number;
     hits: number;
+    elements: DamageElement[];
   } | null;
 
   if (!result) return; // user cancelled
 
-  const { rawDamage, damageType, piercing, hits } = result;
+  const { rawDamage, damageType, piercing, hits, elements } = result;
 
   // ─── Route through socketlib when the current user doesn't own the actor ──
   // Unlinked enemy tokens are owned by nobody (players), so actor.update()
@@ -516,7 +520,8 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
       rawDamage,
       type: damageType,
       piercing,
-      hits
+      hits,
+      elements
     })) as ApplyDamageResult;
   } else {
     outcome = await applyDamageToActor({
@@ -524,7 +529,8 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
       rawDamage,
       type: damageType,
       piercing,
-      hits
+      hits,
+      elements
     } as ApplyDamageOptions);
   }
 
@@ -538,6 +544,10 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
   const hitsNote = outcome.hits > 1 ? ` ×${outcome.hits} hits` : "";
   const piercingNote =
     piercing > 0 && damageType !== "unsoakable" ? `, ${piercing} piercing` : "";
+  const elementNote =
+    elements.length > 0
+      ? ` [${elements.map(e => `${e.name.charAt(0).toUpperCase()}${e.name.slice(1)} Lv.${e.level}`).join(", ")}]`
+      : "";
 
   // Resolve attacker: prefer the first controlled token, fall back to assigned character
   const controlledToken = (canvas as any)?.tokens?.controlled?.[0];
@@ -551,7 +561,7 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
     speaker: ChatMessage.getSpeaker({ actor: actor as any }),
     content: `<div style="border-left:3px solid #c00;padding:4px 8px;font-size:13px">
       <strong>${attackerName}</strong> → <strong>${actor.name}</strong><br>
-      <strong>${rawDamage}</strong> <strong>${typeLabel}</strong> damage${piercingNote}${hitsNote}
+      <strong>${rawDamage}</strong> <strong>${typeLabel}</strong> damage${piercingNote}${hitsNote}${elementNote}
     </div>`
   });
 }

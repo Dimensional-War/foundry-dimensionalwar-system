@@ -208,7 +208,7 @@
             v-model.number="system.elements.selectedElement1Level"
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option v-for="n in 11" :key="n - 1" :value="n - 1">
+            <option v-for="n in 6" :key="n - 1" :value="n - 1">
               {{ n - 1 }}
             </option>
           </select>
@@ -224,7 +224,7 @@
             v-model.number="system.elements.selectedElement2Level"
             class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option v-for="n in 11" :key="n - 1" :value="n - 1">
+            <option v-for="n in 6" :key="n - 1" :value="n - 1">
               {{ n - 1 }}
             </option>
           </select>
@@ -416,6 +416,12 @@
 <script setup lang="ts">
 import { inject, computed, ref } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
+import {
+  ELEMENT_CHOICES as elementChoices,
+  ELEMENT_OPPOSITIONS as elementOppositions,
+  ELEMENTAL_WEAKNESS_BONUS as elementalWeakness,
+  ELEMENTAL_RESISTANCE_MULT as elementalResistance
+} from "../../utils/elements";
 
 type DwSystem = {
   resources: {
@@ -479,56 +485,6 @@ const sheet = inject<DwBaseSheet>("sheet")!;
 const mpMod = ref("");
 const gaugeMod = ref("");
 const spendLbAmount = ref(0);
-
-// ─── Constants ─────────────────────────────────────────────────────────────
-const elementChoices = [
-  { key: "no_element", label: "No Element" },
-  { key: "fire", label: "Fire" },
-  { key: "water", label: "Water" },
-  { key: "earth", label: "Earth" },
-  { key: "wind", label: "Wind" },
-  { key: "shadow", label: "Shadow" },
-  { key: "light", label: "Light" },
-  { key: "force", label: "Force" },
-  { key: "time", label: "Time" },
-  { key: "darkness", label: "Darkness" },
-  { key: "holy", label: "Holy" }
-];
-
-const elementOppositions: Record<string, string> = {
-  fire: "water",
-  water: "fire",
-  earth: "wind",
-  wind: "earth",
-  shadow: "light",
-  light: "shadow",
-  force: "time",
-  time: "force",
-  darkness: "holy",
-  holy: "darkness"
-};
-
-const elementalWeakness: Record<number, number> = {
-  0: 0,
-  1: 500,
-  2: 1000,
-  3: 1500,
-  4: 2000,
-  5: 2500,
-  7: 3500,
-  8: 4000,
-  9: 4500,
-  10: 5000
-};
-
-const elementalResistance: Record<number, number> = {
-  0: 1,
-  1: 0.75,
-  2: 0.5,
-  3: 0.33,
-  4: 0.2,
-  5: 0
-};
 
 // ─── Computed ──────────────────────────────────────────────────────────────
 const hpPercent = computed(() => {

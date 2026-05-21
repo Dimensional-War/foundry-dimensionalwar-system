@@ -96,6 +96,60 @@
         />
       </div>
 
+      <!-- Elemental (optional) -->
+      <div>
+        <label
+          class="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none"
+        >
+          <input type="checkbox" v-model="isElemental" class="cursor-pointer" />
+          Elemental
+        </label>
+        <div v-if="isElemental" class="mt-1.5 flex flex-col gap-1">
+          <!-- Element 1 -->
+          <div class="flex gap-1 items-center">
+            <select
+              v-model="elementName1"
+              class="flex-1 px-2 py-1.5 border border-gray-500 rounded text-sm focus:outline-none"
+            >
+              <option
+                v-for="el in ELEMENT_CHOICES"
+                :key="el.key"
+                :value="el.key"
+              >
+                {{ el.label }}
+              </option>
+            </select>
+            <select
+              v-model.number="elementLevel1"
+              class="w-20 px-2 py-1.5 border border-gray-500 rounded text-sm focus:outline-none"
+            >
+              <option v-for="n in 5" :key="n" :value="n">Lv.{{ n }}</option>
+            </select>
+          </div>
+          <!-- Element 2 -->
+          <div class="flex gap-1 items-center">
+            <select
+              v-model="elementName2"
+              class="flex-1 px-2 py-1.5 border border-gray-500 rounded text-sm focus:outline-none"
+            >
+              <option
+                v-for="el in ELEMENT_CHOICES"
+                :key="el.key"
+                :value="el.key"
+              >
+                {{ el.label }}
+              </option>
+            </select>
+            <select
+              v-model.number="elementLevel2"
+              class="w-20 px-2 py-1.5 border border-gray-500 rounded text-sm focus:outline-none"
+            >
+              <option v-for="n in 5" :key="n" :value="n">Lv.{{ n }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- ─── Buttons ─────────────────────────────────────────────────────── -->
       <div class="flex gap-2 mt-1">
         <button
@@ -120,6 +174,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import type { VueDialog } from "../vue-dialog";
+import { ELEMENT_CHOICES } from "../../utils/elements";
 
 interface Props {
   /** VueDialog instance — injected automatically by VueDialog.show() */
@@ -134,14 +189,27 @@ const rawDamage = ref(0);
 const damageType = ref<"physical" | "magical" | "unsoakable">("physical");
 const piercing = ref(0);
 const hits = ref(1);
+const isElemental = ref(false);
+const elementName1 = ref("no_element");
+const elementLevel1 = ref(1);
+const elementName2 = ref("no_element");
+const elementLevel2 = ref(1);
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 function handleApply() {
+  const elements = isElemental.value
+    ? [
+        { name: elementName1.value, level: elementLevel1.value },
+        { name: elementName2.value, level: elementLevel2.value }
+      ].filter(e => e.name !== "no_element")
+    : [];
+
   props.dialog.submit({
     rawDamage: rawDamage.value,
     damageType: damageType.value,
     piercing: damageType.value === "unsoakable" ? 0 : piercing.value,
-    hits: Math.max(1, hits.value ?? 1)
+    hits: Math.max(1, hits.value ?? 1),
+    elements
   });
 }
 </script>

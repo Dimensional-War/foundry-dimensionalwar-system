@@ -1,4 +1,9 @@
 import type { SystemActor } from "../documents";
+import {
+  ELEMENT_OPPOSITIONS,
+  ELEMENTAL_WEAKNESS_BONUS,
+  ELEMENTAL_RESISTANCE_MULT
+} from "./elements";
 
 export interface SoakInfo {
   physical: number;
@@ -17,6 +22,11 @@ interface SoakComponents {
   shieldHitsLeft: number;
 }
 
+export interface DamageElement {
+  name: string;
+  level: number;
+}
+
 export interface ApplyDamageOptions {
   actor: SystemActor;
   rawDamage: number;
@@ -24,6 +34,8 @@ export interface ApplyDamageOptions {
   piercing: number;
   /** Number of combo hits. Soak (including shield depletion) is applied per hit. Default: 1 */
   hits?: number;
+  /** Attack elements for elemental weakness/resistance calculation. Empty = no elemental effect. */
+  elements?: DamageElement[];
 }
 
 export interface ApplyDamageResult {
@@ -101,7 +113,8 @@ export async function applyDamageToActor({
   rawDamage,
   type,
   piercing,
-  hits = 1
+  hits = 1,
+  elements = []
 }: ApplyDamageOptions): Promise<ApplyDamageResult> {
   const system = actor.system as any;
   const hitCount = Math.max(1, Math.floor(hits));
@@ -117,10 +130,51 @@ export async function applyDamageToActor({
   let totalEffectiveSoak = 0;
   let shieldUsed = false;
 
+  // ─── Pre-compute elemental modifiers (target elements are stable across hits) ──
+  const attackEls = elements.filter(
+    e => e.name !== "no_element" && e.level > 0
+  );
+  let weaknessBonus = 0;
+  let resistanceMult = 1;
+  if (attackEls.length > 0) {
+    const targetEls = [
+      {
+        name: (system as any).elements?.element1Name,
+        level: (system as any).elements?.element1Level ?? 0
+      },
+      {
+        name: (system as any).elements?.element2Name,
+        level: (system as any).elements?.element2Level ?? 0
+      }
+    ].filter(e => e.name && e.name !== "no_element");
+
+    const weaknessLevel = targetEls
+      .filter(ce =>
+        attackEls.some(ae => ae.name === ELEMENT_OPPOSITIONS[ce.name])
+      )
+      .reduce((acc, ce) => {
+        const ae = attackEls.find(a => a.name === ELEMENT_OPPOSITIONS[ce.name]);
+        return acc + ce.level + (ae?.level ?? 0);
+      }, 0);
+
+    const resistedEls = targetEls.filter(ce =>
+      attackEls.some(ae => ae.name === ce.name)
+    );
+
+    weaknessBonus = ELEMENTAL_WEAKNESS_BONUS[weaknessLevel] ?? 0;
+    resistedEls.forEach(re => {
+      resistanceMult *=
+        ELEMENTAL_RESISTANCE_MULT[Math.abs(re.level - weaknessLevel)] ?? 1;
+    });
+  }
+
   for (let i = 0; i < hitCount; i++) {
+    // Pre-soak damage includes elemental weakness bonus
+    const preSoakDamage = rawDamage + weaknessBonus;
+
     if (type === "unsoakable") {
-      // Unsoakable: all damage bypasses soak on every hit
-      totalFinalDamage += rawDamage;
+      // Unsoakable: all damage bypasses soak on every hit; elemental resistance still applies
+      totalFinalDamage += Math.floor(preSoakDamage * resistanceMult);
       continue;
     }
 
@@ -130,12 +184,14 @@ export async function applyDamageToActor({
     const totalSoak =
       (type === "physical" ? physicalBase : magicalBase) + shieldBonus;
 
-    const piercingPart = Math.min(piercing, rawDamage);
-    const soakedPart = rawDamage - piercingPart;
+    const piercingPart = Math.min(piercing, preSoakDamage);
+    const soakedPart = preSoakDamage - piercingPart;
     const absorbed = Math.min(totalSoak, soakedPart);
-    const hitDamage = Math.floor(
-      piercingPart + Math.max(0, soakedPart - totalSoak)
-    );
+    let hitDamage = piercingPart + Math.max(0, soakedPart - totalSoak);
+
+    // Apply elemental resistance to post-soak damage (mirrors StatusTab.vue logic)
+    if (hitDamage > 0) hitDamage *= resistanceMult;
+    hitDamage = Math.floor(hitDamage);
 
     totalFinalDamage += hitDamage;
     totalEffectiveSoak += absorbed;
