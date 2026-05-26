@@ -444,6 +444,38 @@
         margin-right: 4px;
     }
 
+    /* ── Dice Result Categories (Color Only) ──────────────────────── */
+
+    /* Divine (top 1%) - Cyan */
+    .dice-rolls li.roll.result-divine {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="%2300ffff"><rect x="6" y="6" width="52" height="52" rx="4"/></g></svg>');
+        background-size: cover;
+        color: #000;
+    }
+
+    /* Critical (top 5%) - Blue */
+    .dice-rolls li.roll.result-critical {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="%230000ff"><rect x="6" y="6" width="52" height="52" rx="4"/></g></svg>');
+        background-size: cover;
+        color: white;
+    }
+
+    /* Botch (bottom 5%) - Brown */
+    .dice-rolls li.roll.result-botch {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="%238b4513"><rect x="6" y="6" width="52" height="52" rx="4"/></g></svg>');
+        background-size: cover;
+        color: white;
+    }
+
+    /* Divine Botch (bottom 1%) - Red */
+    .dice-rolls li.roll.result-divine-botch {
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g fill="%23ff0000"><rect x="6" y="6" width="52" height="52" rx="4"/></g></svg>');
+        background-size: cover;
+        color: white;
+        filter: none;
+        /* Override any grayscale filter */
+    }
+
 }
 
 /* End @layer components */

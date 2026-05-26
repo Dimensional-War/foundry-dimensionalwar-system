@@ -1,10 +1,10 @@
 /**
  * Custom DiceTerm for Dimensional War skill checks
  * Allows notation like "1s5" where 5 is the skill level
- * Automatically converts skill level to appropriate die size
+ * Automatically converts skill level to appropriate die size using physical dice formulas
  */
 
-import { getSkillDieSize } from "../utils/token-hud";
+import { getSkillDieSize, getPhysicalDiceFormula } from "./dice-utils";
 
 // @ts-expect-error
 export class DwSkillDiceTerm extends foundry.dice.terms.Die {
@@ -47,13 +47,123 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
   }
 
   /**
-   * Override expression to show skill notation
+   * Override evaluate to use physical dice formulas for true uniform distribution.
+   * This is called once per term (not per die) during roll evaluation.
+   */
+  async evaluate({
+    minimize = false,
+    maximize = false
+  }: {
+    minimize?: boolean;
+    maximize?: boolean;
+  } = {}): Promise<this> {
+    // Check if physical dice formulas are enabled
+    const usePhysicalFormulas = // @ts-expect-error - Custom system namespace
+    game.settings?.get("dimensionalwar", "usePhysicalDiceFormulas");
+
+    // If disabled or setting not found, use default evaluation
+    if (!usePhysicalFormulas) {
+      return await super.evaluate({ minimize, maximize });
+    }
+
+    const dieSize = this.faces ?? 40;
+    const formula = getPhysicalDiceFormula(dieSize);
+
+    // If the formula is just "1dX" (fallback), use default evaluation
+    if (
+      formula.startsWith("1d") &&
+      !formula.includes("+") &&
+      !formula.includes("-") &&
+      !formula.includes("*")
+    ) {
+      return await super.evaluate({ minimize, maximize });
+    }
+
+    // Roll all physical dice formulas without awaiting Dice So Nice
+    const physicalRolls: Roll[] = [];
+    const numDice = this.number ?? 1;
+
+    for (let i = 0; i < numDice; i++) {
+      const physicalRoll = await Roll.create(formula);
+      await physicalRoll.evaluate({ minimize, maximize });
+      physicalRolls.push(physicalRoll);
+
+      const result = physicalRoll.total ?? 0;
+      this.results.push({
+        result,
+        active: true
+      });
+    }
+
+    // Show ALL dice to Dice So Nice at once (don't await - let them animate together)
+    if ((game as any).dice3d && physicalRolls.length > 0) {
+      // Fire all animations simultaneously
+      const promises = physicalRolls.map(roll =>
+        (game as any).dice3d.showForRoll(roll, game.user, true)
+      );
+      // Wait for all animations to start (but they'll run in parallel)
+      await Promise.all(promises);
+    }
+
+    this._evaluated = true;
+    return this;
+  }
+
+  /**
+   * Override expression to show skill notation (e.g., "1s3")
+   * Note: Cannot include physical formula here as it breaks Foundry's parser
    */
   get expression() {
     if (typeof this.skillLevel === "number") {
       return `${this.number}s${this.skillLevel}${this.modifiers.join("")}`;
     }
     return super.expression;
+  }
+
+  /**
+   * Get the physical dice formula for display purposes
+   */
+  get physicalFormula() {
+    if (typeof this.skillLevel === "number") {
+      return getPhysicalDiceFormula(this.faces ?? 40);
+    }
+    return "";
+  }
+
+  /**
+   * Determine the result category for a given roll result
+   * @param result The roll result value
+   * @returns Category label or null if not a special result
+   */
+  getResultCategory(result: number): string | null {
+    const dieSize = this.faces ?? 40;
+
+    // Calculate thresholds
+    const bottom1Percent = Math.ceil(dieSize * 0.01);
+    const bottom5Percent = Math.ceil(dieSize * 0.05);
+    const top5Percent = Math.floor(dieSize * 0.95) + 1;
+    const top1Percent = Math.floor(dieSize * 0.99) + 1;
+
+    // Check categories from most extreme to least extreme
+    if (result >= top1Percent) return "Divine";
+    if (result >= top5Percent) return "Critical";
+    if (result <= bottom1Percent) return "Divine Botch";
+    if (result <= bottom5Percent) return "Botch";
+
+    return null;
+  }
+
+  /**
+   * Override the tooltip formula to show die size instead of skill level
+   * This changes "10s3" to "10d60" in the tooltip
+   */
+  getTooltipData(): any {
+    const data = super.getTooltipData();
+    if (typeof this.skillLevel === "number") {
+      // Replace the formula with the actual die size notation
+      data.formula = `${this.number}d${this.faces}`;
+    }
+    return data;
   }
 
   /* -------------------------------------------- */
@@ -127,6 +237,7 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
    */
   toJSON(): Record<string, any> {
     const data = super.toJSON();
+    data.class = DwSkillDiceTerm.baseClassName; // Ensure correct class name for reconstruction
     data.skillLevel = this.skillLevel;
     return data;
   }

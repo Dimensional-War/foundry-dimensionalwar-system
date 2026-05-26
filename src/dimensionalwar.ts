@@ -92,6 +92,18 @@ const initHandler = () => {
   CONFIG.Dice.terms.s = DwSkillDiceTerm;
   // @ts-expect-error - Custom DiceTerm type registration
   CONFIG.Dice.termTypes.DwSkillDiceTerm = DwSkillDiceTerm;
+
+  // Register game settings
+  // @ts-expect-error - Custom system namespace
+  game.settings.register("dimensionalwar", "usePhysicalDiceFormulas", {
+    name: "Use Physical Dice Formulas",
+    hint: "Roll skill dice using physical dice combinations (e.g., 1d6+1d10 for d60) that animate with Dice So Nice. When disabled, uses simple virtual dice (e.g., 1d60).",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true,
+    requiresReload: true
+  });
 };
 
 // ─── Custom Token HUD: Add Perception Palette ──────────────────────────────────
@@ -286,6 +298,61 @@ Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
     hudElement.appendChild(palette);
   } else {
     html.appendChild(palette);
+  }
+});
+
+// ─── Chat Message: Display Physical Dice Formula & Result Labels ────────────────
+
+Hooks.on("renderChatMessage", (_message: any, html: JQuery) => {
+  const messageRolls = _message.rolls || [];
+  if (!messageRolls.length) return;
+
+  const roll = messageRolls[0];
+  if (!roll?.terms) return;
+
+  // Find DwSkillDiceTerm instances
+  const skillTerms = roll.terms.filter(
+    (term: any) =>
+      term.constructor?.baseClassName === "DwSkillDiceTerm" ||
+      term.constructor?.name === "DwSkillDiceTerm"
+  );
+
+  if (skillTerms.length === 0) return;
+
+  const skillTerm = skillTerms[0];
+
+  // Add physical formula display (if physical dice formulas are enabled)
+  const usePhysicalFormulas =
+    // @ts-expect-error - Custom system namespace
+    game.settings.get("dimensionalwar", "usePhysicalDiceFormulas");
+  if (usePhysicalFormulas) {
+    const rollFormula = html.find(".dice-formula");
+    if (rollFormula.length) {
+      const physicalFormula = skillTerm.physicalFormula;
+      if (physicalFormula) {
+        rollFormula.append(
+          `<div class="physical-formula" style="font-size: 0.85em; opacity: 0.8; margin-top: 2px;">[${physicalFormula}]</div>`
+        );
+      }
+    }
+  }
+
+  // Add result category colors to individual die results
+  const diceRolls = html.find(".dice-rolls li.roll");
+  if (diceRolls.length && skillTerm.results) {
+    diceRolls.each((index: number, element: HTMLElement) => {
+      const result = skillTerm.results[index];
+      if (!result) return;
+
+      const category = skillTerm.getResultCategory(result.result);
+      if (category) {
+        const $element = $(element);
+
+        // Add category class for styling (color only, no text)
+        const categoryClass = category.toLowerCase().replace(/\s+/g, "-");
+        $element.addClass(`result-${categoryClass}`);
+      }
+    });
   }
 });
 

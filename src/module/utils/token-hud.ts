@@ -5,27 +5,7 @@
  */
 
 import type { SystemActor } from "../documents";
-
-/**
- * Get the die size for a given skill level according to Dimensional War rules
- * Level 0: 1d40 (no bonus allowed)
- * Level 1: 1d40
- * Level 2-3: 1d60
- * Level 4-5: 1d90
- * Level 6-7: 1d140
- * Level 8-9: 1d220
- * Level 10: 1d350
- * Level 11+: 1d375 (for temporary boosts beyond base skill cap)
- */
-export function getSkillDieSize(level: number): number {
-  if (level <= 1) return 40;
-  if (level <= 3) return 60;
-  if (level <= 5) return 90;
-  if (level <= 7) return 140;
-  if (level <= 9) return 220;
-  if (level === 10) return 350;
-  return 375; // level 11+
-}
+import { getSkillDieSize } from "../rolling/dice-utils";
 
 /**
  * Parse a skill check formula in the format: (x)s(y)(+|-|*)(z)
