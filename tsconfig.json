@@ -14,8 +14,8 @@
             "vite/client",
             "fvtt-types"
         ],
-        "baseUrl": "./",
         "ignoreDeprecations": "6.0",
+        "baseUrl": "./",
         "paths": {
             "~/*": [
                 "src/*"

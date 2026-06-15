@@ -1,6 +1,26 @@
+import { markRaw } from "vue";
 import { ActorType } from "./enums";
 
-export class SystemActor extends Actor {
+declare module "fvtt-types/configuration" {
+  interface DocumentClassConfig {
+    Actor: typeof SystemActor<Actor.SubType>;
+  }
+  interface ConfiguredActor<SubType extends Actor.SubType> {
+    document: SystemActor<SubType>;
+  }
+}
+
+export class SystemActor<
+  SubType extends Actor.SubType = Actor.SubType
+> extends Actor<SubType> {
+  constructor(
+    data: ConstructorParameters<typeof Actor>[0],
+    context: ConstructorParameters<typeof Actor>[1]
+  ) {
+    super(data, context);
+    markRaw(this.items);
+    markRaw(this.effects);
+  }
   /**
    * Pre-create hook to set default token settings for actors
    */

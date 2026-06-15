@@ -280,7 +280,6 @@ export async function applyDamageToActor({
     updateData["system.armors"] = armors;
   }
 
-  // @ts-expect-error - actor.update accepts arbitrary update objects
   await actor.update(updateData);
 
   return {

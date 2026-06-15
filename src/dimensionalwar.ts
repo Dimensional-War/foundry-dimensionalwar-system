@@ -40,7 +40,7 @@ import type {
 const initHandler = () => {
   CONFIG.debug.rollParsing = false; // Enable debug logging for roll parsing
   // Register the custom Actor document class
-  CONFIG.Actor.documentClass = SystemActor as unknown as typeof Actor;
+  CONFIG.Actor.documentClass = SystemActor;
 
   // Register data models for each actor type
   CONFIG.Actor.dataModels = {
@@ -411,6 +411,26 @@ Hooks.on("canvasReady", () => {
 Hooks.on("deleteToken", (_scene: any, tokenDoc: any) => {
   if (tokenDoc?.id) removePerceptionOverlay(tokenDoc.id);
 });
+
+// Make sure PC tokens always have friendly disposition and hover name/bars
+
+Hooks.on(
+  "preCreateToken",
+  (
+    tokenDoc: TokenDocument,
+    _data: object,
+    _options: object,
+    _userId: string
+  ) => {
+    if (tokenDoc.actor?.type !== ActorType.Pc) return;
+
+    tokenDoc.updateSource({
+      disposition: CONST.TOKEN_DISPOSITIONS.FRIENDLY,
+      displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
+      displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER
+    });
+  }
+);
 
 // ─── Region Movement Cost: Cross-Country Running ─────────────────────────────
 

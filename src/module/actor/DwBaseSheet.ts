@@ -123,6 +123,26 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
             }
           }
 
+          // Update dependent token light/sight/other prototypeToken fields for linked actors
+          if (this.actor.prototypeToken.actorLink && cleanDiff.prototypeToken) {
+            try {
+              const tokenUpdate = foundry.utils.flattenObject(
+                cleanDiff.prototypeToken
+              );
+              const tokens = this.actor.getDependentTokens();
+              for await (const token of tokens) {
+                if (!token?._id || !token.parent) continue;
+                try {
+                  await token.update(tokenUpdate);
+                } catch (e) {
+                  continue;
+                }
+              }
+            } catch (e) {
+              // getDependentTokens might fail, not critical
+            }
+          }
+
           // Flatten to dot notation for reliable nested updates
           const updateData = foundry.utils.flattenObject(cleanDiff);
 
