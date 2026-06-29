@@ -22,7 +22,8 @@ import {
   showPerceptionOverlay,
   cleanupAllPerceptionOverlays,
   initPerceptionHoverListener,
-  removePerceptionOverlay
+  removePerceptionOverlay,
+  isMessageVisibleToCurrentUser
 } from "./module/utils/perception-overlay";
 import { DwRoll } from "./module/rolling/DwRoll";
 import { DwRollParser } from "./module/rolling/DwRollParser";
@@ -102,6 +103,17 @@ const initHandler = () => {
     config: true,
     type: Boolean,
     default: false
+  });
+
+  // @ts-expect-error - Custom system namespace
+  game.settings.register("dimensionalwar", "perceptionHoverDuration", {
+    name: "Perception Hover Overlay Duration",
+    hint: "How long (in seconds) the perception overlay lingers after mousing over a token. Set to 0 to disable hover overlays entirely.",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: 15,
+    range: { min: 0, max: 60, step: 1 }
   });
 };
 
@@ -220,14 +232,30 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
       // Fallback to the HUD's token if none are selected
       const actor = this.document?.actor as SystemActor;
       if (actor) {
-        await rollPerceptionCheck(actor, senseType);
+        await rollPerceptionCheck(
+          actor,
+          senseType.toLowerCase() as
+            | "sight"
+            | "hearing"
+            | "smell"
+            | "taste"
+            | "touch"
+        );
       }
     } else {
       // Roll for each selected token
       for (const token of controlledTokens) {
         const actor = token.actor as SystemActor;
         if (actor) {
-          await rollPerceptionCheck(actor, senseType);
+          await rollPerceptionCheck(
+            actor,
+            senseType.toLowerCase() as
+              | "sight"
+              | "hearing"
+              | "smell"
+              | "taste"
+              | "touch"
+          );
         }
       }
     }
@@ -301,8 +329,7 @@ Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
 });
 
 // ─── Chat Message: Display Physical Dice Formula & Result Labels ────────────────
-
-Hooks.on("renderChatMessage", (_message: any, html: JQuery) => {
+Hooks.on("renderChatMessageHTML", (_message: any, html: HTMLElement) => {
   const messageRolls = _message.rolls || [];
   if (!messageRolls.length) return;
 
@@ -325,31 +352,31 @@ Hooks.on("renderChatMessage", (_message: any, html: JQuery) => {
     // @ts-expect-error - Custom system namespace
     game.settings.get("dimensionalwar", "usePhysicalDiceFormulas");
   if (usePhysicalFormulas) {
-    const rollFormula = html.find(".dice-formula");
+    const rollFormula = html.querySelectorAll(".dice-formula");
     if (rollFormula.length) {
       const physicalFormula = skillTerm.physicalFormula;
       if (physicalFormula) {
-        rollFormula.append(
-          `<div class="physical-formula" style="font-size: 0.85em; opacity: 0.8; margin-top: 2px;">[${physicalFormula}]</div>`
-        );
+        rollFormula.forEach(element => {
+          element.insertAdjacentHTML(
+            "beforeend",
+            `<div class="physical-formula" style="font-size: 0.85em; opacity: 0.8; margin-top: 2px;">[${physicalFormula}]</div>`
+          );
+        });
       }
     }
   }
 
   // Add result category colors to individual die results
-  const diceRolls = html.find(".dice-rolls li.roll");
+  const diceRolls = html.querySelectorAll(".dice-rolls li.roll");
   if (diceRolls.length && skillTerm.results) {
-    diceRolls.each((index: number, element: HTMLElement) => {
+    diceRolls.forEach((element, index) => {
       const result = skillTerm.results[index];
       if (!result) return;
 
       const category = skillTerm.getResultCategory(result.result);
       if (category) {
-        const $element = $(element);
-
-        // Add category class for styling (color only, no text)
         const categoryClass = category.toLowerCase().replace(/\s+/g, "-");
-        $element.addClass(`result-${categoryClass}`);
+        element.classList.add(`result-${categoryClass}`);
       }
     });
   }
@@ -359,6 +386,12 @@ Hooks.on("renderChatMessage", (_message: any, html: JQuery) => {
 
 Hooks.on("createChatMessage", (message: any) => {
   if (!message.flags?.dimensionalwar?.perceptionCheck) return;
+
+  // ── Visibility gate ───────────────────────────────────────────────────────
+  // Respect roll mode: blind rolls show only to GM, whisper rolls only to
+  // recipients, public rolls to everyone.
+  if (!isMessageVisibleToCurrentUser(message)) return;
+  // ─────────────────────────────────────────────────────────────────────────
 
   const tokenId: string | undefined = message.flags?.dimensionalwar?.tokenId;
   const senseType: string | undefined =

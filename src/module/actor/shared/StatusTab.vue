@@ -422,6 +422,7 @@ import {
   ELEMENTAL_WEAKNESS_BONUS as elementalWeakness,
   ELEMENTAL_RESISTANCE_MULT as elementalResistance
 } from "../../utils/elements";
+import { SystemActor } from "~/module/documents";
 
 type DwSystem = {
   resources: {
@@ -478,7 +479,7 @@ type DwSystem = {
 };
 
 const system = inject<DwSystem>("reactiveSystem")!;
-const actor = inject<Actor>("actor")!;
+const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 
 // ─── Local transient state ─────────────────────────────────────────────────

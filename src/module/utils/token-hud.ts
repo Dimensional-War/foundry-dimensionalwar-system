@@ -4,7 +4,8 @@
  * Adds custom buttons to the token HUD for Dimensional War actions.
  */
 
-import type { SystemActor } from "../documents";
+import { type SystemActor, isSystemActor } from "../documents";
+import { ActorType } from "../enums";
 import { getSkillDieSize } from "../rolling/dice-utils";
 
 /**
@@ -112,69 +113,68 @@ export async function rollSkillCheck(
  */
 export async function rollPerceptionCheck(
   actor: SystemActor,
-  senseType: string
+  senseType: "sight" | "hearing" | "smell" | "taste" | "touch"
 ): Promise<void> {
-  const system = actor.system as any;
+  if (actor.is_character()) {
+    const system = actor.system;
 
-  // Get the sense level and bonus from system.skills.senses
-  const senses = system.skills?.senses as
-    | Record<string, { level: number; bonus: number }>
-    | undefined;
-  const senseData = senses?.[senseType];
-  const senseLevel = senseData?.level ?? 0;
-  const senseBonus = senseData?.bonus ?? 0;
+    // Get the sense level and bonus from system.skills.senses
+    const senseData = system.bonuses?.senses?.[senseType] ?? 0;
+    const senseLevel = system.skills?.utility.Perception?.level ?? 0;
+    const senseBonus = senseData ?? 0;
 
-  // Get awareness statistic bonus (if it exists in your system)
-  const awareness = system.statistics?.awareness?.level ?? 0;
+    // Get awareness statistic bonus (if it exists in your system)
+    const awareness = system.statistics?.awareness.value ?? 0;
 
-  // Calculate total bonus (awareness + sense bonus)
-  // Note: sense level determines the die size, not added to bonus
-  // Level 0 skills have no bonus allowed
-  const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
+    // Calculate total bonus (awareness + sense bonus)
+    // Note: sense level determines the die size, not added to bonus
+    // Level 0 skills have no bonus allowed
+    const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
 
-  // Build bonus details string for display
-  const bonusDetails =
-    senseLevel === 0
-      ? ""
-      : `(Awareness +${awareness}, Sense Bonus +${senseBonus})`;
+    // Build bonus details string for display
+    const bonusDetails =
+      senseLevel === 0
+        ? ""
+        : `(Awareness +${awareness}, Sense Bonus +${senseBonus})`;
 
-  // Build formula using skill notation
-  const effectiveBonus = senseLevel === 0 ? 0 : totalBonus;
-  const formula =
-    effectiveBonus !== 0
-      ? `1s${senseLevel} + ${effectiveBonus}`
-      : `1s${senseLevel}`;
+    // Build formula using skill notation
+    const effectiveBonus = senseLevel === 0 ? 0 : totalBonus;
+    const formula =
+      effectiveBonus !== 0
+        ? `1s${senseLevel} + ${effectiveBonus}`
+        : `1s${senseLevel}`;
 
-  const roll = await Roll.create(formula);
-  const evaluated = await roll.evaluate();
+    const roll = await Roll.create(formula);
+    const evaluated = await roll.evaluate();
 
-  // Find the token for overlay
-  const tokenObj = (canvas as any)?.tokens?.placeables?.find(
-    (t: any) => t.actor?.id === actor.id
-  ) as any;
-  const tokenId: string | undefined = tokenObj?.id;
+    // Find the token for overlay
+    const tokenObj = (canvas as any)?.tokens?.placeables?.find(
+      (t: any) => t.actor?.id === actor.id
+    ) as any;
+    const tokenId: string | undefined = tokenObj?.id;
 
-  // Build flavor text with optional bonus details
-  let flavor = `${senseType} Perception Skill Check`;
-  if (bonusDetails && effectiveBonus !== 0) {
-    flavor += ` ${bonusDetails}`;
+    // Build flavor text with optional bonus details
+    let flavor = `${senseType} Perception Skill Check`;
+    if (bonusDetails && effectiveBonus !== 0) {
+      flavor += ` ${bonusDetails}`;
+    }
+
+    // Create message with perception-specific flags from the start
+    await evaluated.toMessage({
+      flavor,
+      flags: {
+        // @ts-ignore
+        dimensionalwar: {
+          perceptionCheck: true,
+          skillCheck: true,
+          tokenId,
+          senseType,
+          skillName: `${senseType} Perception`,
+          skillLevel: senseLevel,
+          bonus: effectiveBonus
+        }
+      },
+      speaker: ChatMessage.getSpeaker({ actor })
+    });
   }
-
-  // Create message with perception-specific flags from the start
-  await evaluated.toMessage({
-    flavor,
-    flags: {
-      // @ts-ignore
-      dimensionalwar: {
-        perceptionCheck: true,
-        skillCheck: true,
-        tokenId,
-        senseType,
-        skillName: `${senseType} Perception`,
-        skillLevel: senseLevel,
-        bonus: effectiveBonus
-      }
-    },
-    speaker: ChatMessage.getSpeaker({ actor })
-  });
 }

@@ -1,7 +1,11 @@
-import { CharacterDataModel } from "./BaseDataModels";
+import { BaseData } from "../types/base-data";
+import { CharacterDataModel, CharacterSchema } from "./BaseDataModels";
 
-export class NpcDataModel extends CharacterDataModel {
-  static override defineSchema(): foundry.data.fields.DataSchema {
+export class NpcDataModel extends CharacterDataModel<
+  CharacterSchema,
+  BaseData.ActorUniversal
+> {
+  static override defineSchema() {
     return {
       ...super.defineSchema()
     };

@@ -243,6 +243,7 @@
 <script setup lang="ts">
 import { inject, computed, watch } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
+import { SystemActor } from "~/module/documents";
 
 type ArmorEntry = {
   name: string;
@@ -278,12 +279,11 @@ type DwSystem = {
 };
 
 const system = inject<DwSystem>("reactiveSystem")!;
-const actor = inject<Actor>("actor")!;
+const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 void sheet;
 
-// @ts-expect-error - Foundry types don't include our custom actor types
-const isEnemy = computed(() => actor.type === "enemy");
+const isEnemy = computed(() => actor.is_enemy());
 
 // Watch for equipped armor's max shield hits changing - clamp current hits if needed
 watch(

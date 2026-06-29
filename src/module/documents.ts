@@ -1,15 +1,6 @@
 import { markRaw } from "vue";
 import { ActorType } from "./enums";
 
-declare module "fvtt-types/configuration" {
-  interface DocumentClassConfig {
-    Actor: typeof SystemActor<Actor.SubType>;
-  }
-  interface ConfiguredActor<SubType extends Actor.SubType> {
-    document: SystemActor<SubType>;
-  }
-}
-
 export class SystemActor<
   SubType extends Actor.SubType = Actor.SubType
 > extends Actor<SubType> {
@@ -169,5 +160,50 @@ export class SystemActor<
   }
   set flyingSpeed(value: number) {
     (this.system as any).speeds.flying = value;
+  }
+
+  is_pc(): this is SystemActor<ActorType.Pc> {
+    return this.type === ActorType.Pc;
+  }
+
+  is_npc(): this is SystemActor<ActorType.Npc> {
+    return this.type === ActorType.Npc;
+  }
+
+  is_ally(): this is SystemActor<ActorType.Ally> {
+    return this.type === ActorType.Ally;
+  }
+
+  is_enemy(): this is SystemActor<ActorType.Enemy> {
+    return this.type === ActorType.Enemy;
+  }
+
+  is_boss(): this is SystemActor<ActorType.Boss> {
+    return this.type === ActorType.Boss;
+  }
+
+  is_character(): this is SystemActor<
+    | ActorType.Pc
+    | ActorType.Npc
+    | ActorType.Ally
+    | ActorType.Enemy
+    | ActorType.Boss
+  > {
+    return (
+      this.is_pc() ||
+      this.is_npc() ||
+      this.is_ally() ||
+      this.is_enemy() ||
+      this.is_boss()
+    );
+  }
+}
+
+export function isSystemActor(
+  actor: SystemActor,
+  type: ActorType
+): asserts actor is SystemActor<typeof type> {
+  if (actor.type !== type) {
+    throw new Error(`Actor is not of type ${type}`);
   }
 }

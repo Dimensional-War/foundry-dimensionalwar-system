@@ -87,6 +87,7 @@
 
 <script setup lang="ts">
 import { inject, computed } from "vue";
+import { SystemActor } from "~/module/documents";
 
 interface Custom {
   name: string;
@@ -101,7 +102,7 @@ interface SystemData {
   customs?: Custom[];
 }
 
-const actor = inject<Actor>("actor")!;
+const actor = inject<SystemActor>("actor")!;
 const system = inject<SystemData>("reactiveSystem")!;
 
 const customs = computed(() => {

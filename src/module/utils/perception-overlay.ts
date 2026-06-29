@@ -53,26 +53,74 @@ export function initPerceptionHoverListener(): void {
       // If a timed overlay is already visible, leave it alone.
       if (activeOverlays.has(tokenId)) return;
 
+      // Read the setting; 0 means hover overlays are disabled.
+      const hoverDurationMs: number =
+        ((game as any).settings?.get(
+          "dimensionalwar",
+          "perceptionHoverDuration"
+        ) as number) * 1000;
+      if (hoverDurationMs <= 0) return;
+
       // Show the last roll (if any) as a hover-only overlay with no timeout.
       const lastRoll = lastPerceptionRolls.get(tokenId);
       if (!lastRoll) return;
+
+      const timeoutId = setTimeout(() => {
+        removePerceptionOverlay(tokenId);
+        lastPerceptionRolls.delete(tokenId); // ← prevent re-trigger on future hovers
+      }, hoverDurationMs);
 
       _showOverlay(
         tokenId,
         token,
         lastRoll.total,
         lastRoll.senseType,
-        null,
+        timeoutId,
         true
       );
     } else {
+      // Mouse left: only dismiss if it was a hover overlay AND its timeout
+      // hasn't fired yet — but per spec we let it count down, so do nothing.
+      // A non-hover (timed roll) overlay is also left alone.
+      //
       // Remove the overlay only if it was hover-triggered; leave timed ones.
-      const entry = activeOverlays.get(tokenId);
-      if (entry?.isHoverOverlay) {
-        removePerceptionOverlay(tokenId);
-      }
+      // const entry = activeOverlays.get(tokenId);
+      // if (entry?.isHoverOverlay) {
+      //   removePerceptionOverlay(tokenId);
+      // }
     }
   });
+}
+
+/**
+ * Returns true if the current user should see the perception overlay for this
+ * chat message, taking roll visibility (blind / whisper / public) into account.
+ *
+ * | Roll mode   | message.blind | message.whisper          | Who sees overlay          |
+ * |-------------|---------------|--------------------------|---------------------------|
+ * | publicroll  | false         | []                       | Everyone                  |
+ * | gmroll      | false         | [gmId, rollerId]         | GM + roller only          |
+ * | blindroll   | true          | [gmId]                   | GM only                   |
+ * | selfroll    | false         | [rollerId]               | Roller only               |
+ */
+export function isMessageVisibleToCurrentUser(message: any): boolean {
+  const user = (game as any).user;
+  if (!user) return false;
+
+  // Blind rolls: only the GM sees the overlay
+  if (message.blind) {
+    return user.isGM;
+  }
+
+  // Whispered rolls (gmroll / selfroll / explicit whisper):
+  // show only to recipients (Foundry always includes the GM in whisper arrays)
+  const whisper: string[] = message.whisper ?? [];
+  if (whisper.length > 0) {
+    return user.isGM || whisper.includes(user.id);
+  }
+
+  // Public roll — everyone sees it
+  return true;
 }
 
 /**

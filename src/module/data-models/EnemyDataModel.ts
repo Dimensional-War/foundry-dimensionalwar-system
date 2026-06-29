@@ -1,7 +1,11 @@
-import { CharacterDataModel } from "./BaseDataModels";
+import { BaseData } from "../types/base-data";
+import { CharacterDataModel, CharacterSchema } from "./BaseDataModels";
 
-export class EnemyDataModel extends CharacterDataModel {
-  static override defineSchema(): foundry.data.fields.DataSchema {
+export class EnemyDataModel extends CharacterDataModel<
+  CharacterSchema,
+  BaseData.enemy
+> {
+  static override defineSchema() {
     return {
       ...super.defineSchema()
     };

@@ -19,7 +19,7 @@
     </div>
 
     <!-- ─── Tab Bar ─────────────────────────────────────────────── -->
-    <nav class="flex gap-0 border-b border-gray-300 flex-shrink-0">
+    <nav class="flex gap-0 border-b border-gray-300 shrink-0">
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -54,9 +54,10 @@ import ArmorTab from "./ArmorTab.vue";
 import StatisticsTab from "./StatisticsTab.vue";
 import CustomsTab from "./CustomsTab.vue";
 import RollsTab from "./RollsTab.vue";
+import { SystemActor } from "~/module/documents.ts";
 
-const actor = inject<Actor>("actor")!;
-const reactiveActor = inject<Actor>("reactiveActor")!;
+const actor = inject<SystemActor>("actor")!;
+const reactiveActor = inject<SystemActor>("reactiveActor")!;
 const sheet = inject<{ actor: Actor; render: () => void }>("sheet")!;
 
 // Initialize from stored preference or default to "status"

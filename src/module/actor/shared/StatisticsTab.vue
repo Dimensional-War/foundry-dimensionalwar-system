@@ -275,10 +275,8 @@
           </div>
         </div>
         <div v-if="speeds.walking" class="mt-2 p-2 bg-gray-100 border rounded">
-          <div>
-            Walking: {{ speeds.walking }} ft | Acrobatics:
-            {{ speeds.acrobatics }} ft | Swimming: {{ speeds.swimming }} ft
-          </div>
+          Walking: {{ speeds.walking }} ft | Acrobatics:
+          {{ speeds.acrobatics }} ft | Swimming: {{ speeds.swimming }} ft
           <template v-if="speeds.flying">
             | Flying: {{ speeds.flying }} ft</template
           >
@@ -292,14 +290,14 @@
       <fieldset class="border p-2 mb-3">
         <legend class="font-bold">Senses (Perception)</legend>
 
-        <!-- Row 1: Sight and Hearing -->
+        <!-- Row 1: Perception and Hearing -->
         <div class="flex gap-2 mb-2">
           <div class="basis-1/4">
-            <label class="block mb-1 font-medium">Sight Level</label>
+            <label class="block mb-1 font-medium">Perception Level</label>
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="sightLevel"
+              v-model.number="perceptionLevel"
               min="0"
               max="10"
             />
@@ -309,17 +307,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="sightBonus"
-            />
-          </div>
-          <div class="basis-1/4">
-            <label class="block mb-1 font-medium">Hearing Level</label>
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="hearingLevel"
-              min="0"
-              max="10"
+              v-model.number="system.bonuses.senses.sight"
             />
           </div>
           <div class="basis-1/4">
@@ -327,21 +315,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="hearingBonus"
-            />
-          </div>
-        </div>
-
-        <!-- Row 2: Smell and Taste -->
-        <div class="flex gap-2 mb-2">
-          <div class="basis-1/4">
-            <label class="block mb-1 font-medium">Smell Level</label>
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="smellLevel"
-              min="0"
-              max="10"
+              v-model.number="system.bonuses.senses.hearing"
             />
           </div>
           <div class="basis-1/4">
@@ -349,17 +323,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="smellBonus"
-            />
-          </div>
-          <div class="basis-1/4">
-            <label class="block mb-1 font-medium">Taste Level</label>
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="tasteLevel"
-              min="0"
-              max="10"
+              v-model.number="system.bonuses.senses.smell"
             />
           </div>
           <div class="basis-1/4">
@@ -367,21 +331,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="tasteBonus"
-            />
-          </div>
-        </div>
-
-        <!-- Row 3: Touch -->
-        <div class="flex gap-2">
-          <div class="basis-1/4">
-            <label class="block mb-1 font-medium">Touch Level</label>
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="touchLevel"
-              min="0"
-              max="10"
+              v-model.number="system.bonuses.senses.taste"
             />
           </div>
           <div class="basis-1/4">
@@ -389,7 +339,7 @@
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="touchBonus"
+              v-model.number="system.bonuses.senses.touch"
             />
           </div>
         </div>
@@ -402,77 +352,11 @@
 import { inject, computed } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
 import type { SystemActor } from "../../documents";
+import { BaseData } from "~/module/types/base-data";
 
 type SkillEntry = { level: number; bonus: number };
-type MovementSkills = {
-  Acrobatics?:
-    | { statistics?: unknown[]; level?: number; bonus?: number }
-    | SkillEntry;
-  Athletics?:
-    | { statistics?: unknown[]; level?: number; bonus?: number }
-    | SkillEntry;
-  Swimming?:
-    | { statistics?: unknown[]; level?: number; bonus?: number }
-    | SkillEntry;
-  Reaction?: SkillEntry;
-};
 
-type SensesSkills = {
-  Sight?: SkillEntry;
-  Hearing?: SkillEntry;
-  Smell?: SkillEntry;
-  Taste?: SkillEntry;
-  Touch?: SkillEntry;
-};
-
-type DwSystem = {
-  resources: {
-    hp: { value: number; max: number; min: number };
-    mp: { value: number; max: number; min: number };
-  };
-  soak: {
-    physicalBase: number;
-    magicalBase: number;
-    armoredPhysical: number;
-    armoredMagical: number;
-    shield: number;
-    shieldHitsLeft: number;
-    shieldHitsMax: number;
-    resolveOfAges: boolean;
-  };
-  gauges: {
-    hasTrance: boolean;
-    trance: number;
-    hasLimitBreak: boolean;
-    limitBreak: number;
-    multiplier: number;
-  };
-  elements: {
-    element1Name: string;
-    element1Level: number;
-    element2Name: string;
-    element2Level: number;
-    selectedElement1Name: string;
-    selectedElement1Level: number;
-    selectedElement2Name: string;
-    selectedElement2Level: number;
-  };
-  skills: {
-    movement?: MovementSkills;
-    senses?: SensesSkills;
-    [key: string]: unknown;
-  };
-  movementFlags?: {
-    hasFlight?: boolean;
-    hasParkour?: boolean;
-    hasTeleport?: boolean;
-    hasCrossCountry?: boolean;
-    burrowing?: number;
-    [key: string]: unknown;
-  };
-};
-
-const system = inject<DwSystem>("reactiveSystem")!;
+const system = inject<BaseData.ActorUniversal>("reactiveSystem")!;
 const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 void sheet;
@@ -496,20 +380,6 @@ const elementChoices = [
   { key: "holy", label: "Holy" }
 ];
 
-const movementSkills = [
-  { key: "Athletics", label: "Athletics" },
-  { key: "Acrobatics", label: "Acrobatics" },
-  { key: "Swimming", label: "Swimming" }
-];
-
-const senses = [
-  { key: "Sight", label: "Sight" },
-  { key: "Hearing", label: "Hearing" },
-  { key: "Smell", label: "Smell" },
-  { key: "Taste", label: "Taste" },
-  { key: "Touch", label: "Touch" }
-];
-
 function clampHP() {
   // Clamp hp.value if it exceeds the new max
   if (system.resources.hp.value > system.resources.hp.max) {
@@ -530,12 +400,6 @@ function getSkillLevel(skillName: string): number {
 }
 
 function setSkillLevel(skillName: string, value: number) {
-  if (!system.skills) {
-    (system as Record<string, unknown>).skills = {};
-  }
-  if (!system.skills.movement) {
-    system.skills.movement = {};
-  }
   const entry = (system.skills.movement as Record<string, unknown>)[skillName];
   if (!entry) {
     (system.skills.movement as Record<string, unknown>)[skillName] = {
@@ -561,12 +425,6 @@ function getSkillBonus(skillName: string): number {
 }
 
 function setSkillBonus(skillName: string, value: number) {
-  if (!system.skills) {
-    (system as Record<string, unknown>).skills = {};
-  }
-  if (!system.skills.movement) {
-    system.skills.movement = {};
-  }
   const entry = (system.skills.movement as Record<string, unknown>)[skillName];
   if (!entry) {
     (system.skills.movement as Record<string, unknown>)[skillName] = {
@@ -575,58 +433,6 @@ function setSkillBonus(skillName: string, value: number) {
     };
   } else if (Array.isArray(entry)) {
     (entry[0] as SkillEntry).bonus = value;
-  } else {
-    (entry as SkillEntry).bonus = value;
-  }
-}
-
-function getSenseLevel(senseName: string): number {
-  const s = system.skills?.senses;
-  if (!s) return 0;
-  const entry = (s as Record<string, unknown>)[senseName];
-  if (!entry) return 0;
-  return (entry as SkillEntry).level ?? 0;
-}
-
-function setSenseLevel(senseName: string, value: number) {
-  if (!system.skills) {
-    (system as Record<string, unknown>).skills = {};
-  }
-  if (!system.skills.senses) {
-    (system.skills as Record<string, unknown>).senses = {};
-  }
-  const entry = (system.skills.senses as Record<string, unknown>)[senseName];
-  if (!entry) {
-    (system.skills.senses as Record<string, unknown>)[senseName] = {
-      level: value,
-      bonus: 0
-    };
-  } else {
-    (entry as SkillEntry).level = value;
-  }
-}
-
-function getSenseBonus(senseName: string): number {
-  const s = system.skills?.senses;
-  if (!s) return 0;
-  const entry = (s as Record<string, unknown>)[senseName];
-  if (!entry) return 0;
-  return (entry as SkillEntry).bonus ?? 0;
-}
-
-function setSenseBonus(senseName: string, value: number) {
-  if (!system.skills) {
-    (system as Record<string, unknown>).skills = {};
-  }
-  if (!system.skills.senses) {
-    (system.skills as Record<string, unknown>).senses = {};
-  }
-  const entry = (system.skills.senses as Record<string, unknown>)[senseName];
-  if (!entry) {
-    (system.skills.senses as Record<string, unknown>)[senseName] = {
-      level: 0,
-      bonus: value
-    };
   } else {
     (entry as SkillEntry).bonus = value;
   }
@@ -697,54 +503,17 @@ const hasCrossCountry = computed({
   set: (value: boolean) => setSkillFlag("hasCrossCountry", value)
 });
 
-const sightLevel = computed({
-  get: () => getSenseLevel("Sight"),
-  set: (value: number) => setSenseLevel("Sight", value)
-});
-
-const sightBonus = computed({
-  get: () => getSenseBonus("Sight"),
-  set: (value: number) => setSenseBonus("Sight", value)
-});
-
-const hearingLevel = computed({
-  get: () => getSenseLevel("Hearing"),
-  set: (value: number) => setSenseLevel("Hearing", value)
-});
-
-const hearingBonus = computed({
-  get: () => getSenseBonus("Hearing"),
-  set: (value: number) => setSenseBonus("Hearing", value)
-});
-
-const smellLevel = computed({
-  get: () => getSenseLevel("Smell"),
-  set: (value: number) => setSenseLevel("Smell", value)
-});
-
-const smellBonus = computed({
-  get: () => getSenseBonus("Smell"),
-  set: (value: number) => setSenseBonus("Smell", value)
-});
-
-const tasteLevel = computed({
-  get: () => getSenseLevel("Taste"),
-  set: (value: number) => setSenseLevel("Taste", value)
-});
-
-const tasteBonus = computed({
-  get: () => getSenseBonus("Taste"),
-  set: (value: number) => setSenseBonus("Taste", value)
-});
-
-const touchLevel = computed({
-  get: () => getSenseLevel("Touch"),
-  set: (value: number) => setSenseLevel("Touch", value)
-});
-
-const touchBonus = computed({
-  get: () => getSenseBonus("Touch"),
-  set: (value: number) => setSenseBonus("Touch", value)
+const perceptionLevel = computed({
+  get: () => system.skills?.utility?.Perception?.level ?? 0,
+  set: (value: number) => {
+    if (system.skills?.utility?.Perception) {
+      system.skills.utility.Perception.level = value;
+    } else {
+      (system.skills as Record<string, unknown>).utility = {
+        Perception: { level: value }
+      };
+    }
+  }
 });
 
 // Speeds calculated by the actor document

@@ -1,9 +1,23 @@
-import { CharacterDataModel, defineSchemaCustoms } from "./BaseDataModels";
+import { BaseData } from "../types/base-data";
+import {
+  CharacterDataModel,
+  CharacterSchema,
+  defineSchemaCustoms
+} from "./BaseDataModels";
 
-export class PcDataModel extends CharacterDataModel {
-  static override defineSchema(): foundry.data.fields.DataSchema {
+const actorSchema = () => ({
+  ...CharacterDataModel.defineSchema(),
+  customs: defineSchemaCustoms()
+});
+
+interface ActorSchema extends CharacterSchema {
+  customs: ReturnType<typeof defineSchemaCustoms>;
+}
+
+export class PcDataModel extends CharacterDataModel<ActorSchema, BaseData.pc> {
+  static override defineSchema() {
     return {
-      ...super.defineSchema(),
+      ...actorSchema(),
       customs: defineSchemaCustoms()
     };
   }
