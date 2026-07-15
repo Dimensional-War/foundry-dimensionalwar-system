@@ -600,39 +600,69 @@ Hooks.once("socketlib.ready", () => {
   dwSocket.register("applyDamage", socketApplyDamage);
 });
 
-/**
- * Show the damage dialog for a given actor (targeted from the canvas).
- * Calculates soak, applies final damage, and posts a chat card.
- */
-async function showDamageDialog(actor: SystemActor): Promise<void> {
-  const result = (await VueDialog.show(
+interface DamageDialogInput {
+  rawDamage: number;
+  damageType: "physical" | "magical" | "unsoakable";
+  piercing: number;
+  hits: number;
+  elements: DamageElement[];
+  applyToCurrentTargets?: boolean;
+}
+
+function getDamageTypeLabel(type: DamageDialogInput["damageType"]): string {
+  return type === "physical"
+    ? "Physical"
+    : type === "magical"
+      ? "Magical"
+      : "Unsoakable";
+}
+
+function getAttackerName(): string {
+  const controlledToken = (canvas as any)?.tokens?.controlled?.[0];
+  return (
+    controlledToken?.name ??
+    (game as any).user?.character?.name ??
+    (game as any).user?.name ??
+    "Unknown"
+  );
+}
+
+async function promptDamageDialog(
+  targetLabel: string,
+  targetCount = 1,
+  options: {
+    showApplyToTargetsOption?: boolean;
+    applyToTargetsLabel?: string;
+  } = {}
+): Promise<DamageDialogInput | null> {
+  const title =
+    targetCount > 1
+      ? `Apply Damage: ${targetCount} Targets`
+      : `Apply Damage: ${targetLabel}`;
+
+  return (await VueDialog.show(
     DamageDialog,
     {
-      targetName: actor.name
+      targetName: targetLabel,
+      showApplyToTargetsOption: !!options.showApplyToTargetsOption,
+      applyToTargetsLabel: options.applyToTargetsLabel
     },
     {
-      window: { title: `Apply Damage: ${actor.name}` },
+      window: { title },
       position: { width: 420 }
     }
-  )) as {
-    rawDamage: number;
-    damageType: "physical" | "magical" | "unsoakable";
-    piercing: number;
-    hits: number;
-    elements: DamageElement[];
-  } | null;
+  )) as DamageDialogInput | null;
+}
 
-  if (!result) return; // user cancelled
-
-  const { rawDamage, damageType, piercing, hits, elements } = result;
-
-  // ─── Route through socketlib when the current user doesn't own the actor ──
-  // Unlinked enemy tokens are owned by nobody (players), so actor.update()
-  // would be blocked. executeAsGM delegates the update to the active GM.
-  let outcome: ApplyDamageResult;
+async function applyDamageToSingleTarget(
+  actor: SystemActor,
+  input: DamageDialogInput
+): Promise<ApplyDamageResult> {
+  const { rawDamage, damageType, piercing, hits, elements } = input;
   const tokenDoc: any = (actor as any).token ?? null;
+
   if (!actor.isOwner && dwSocket) {
-    outcome = (await dwSocket.executeAsGM("applyDamage", {
+    return (await dwSocket.executeAsGM("applyDamage", {
       sceneId: tokenDoc?.parent?.id ?? null,
       tokenId: tokenDoc?.id ?? null,
       actorId: tokenDoc ? null : (actor.id ?? null),
@@ -642,25 +672,27 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
       hits,
       elements
     })) as ApplyDamageResult;
-  } else {
-    outcome = await applyDamageToActor({
-      actor,
-      rawDamage,
-      type: damageType,
-      piercing,
-      hits,
-      elements
-    } as ApplyDamageOptions);
   }
 
-  // ─── Chat card ────────────────────────────────────────────────────────────
-  const typeLabel =
-    damageType === "physical"
-      ? "Physical"
-      : damageType === "magical"
-        ? "Magical"
-        : "Unsoakable";
-  const hitsNote = outcome.hits > 1 ? ` ×${outcome.hits} hits` : "";
+  return applyDamageToActor({
+    actor,
+    rawDamage,
+    type: damageType,
+    piercing,
+    hits,
+    elements
+  } as ApplyDamageOptions);
+}
+
+async function postDamageChatCard(
+  targets: SystemActor[],
+  input: DamageDialogInput
+): Promise<void> {
+  if (!targets.length) return;
+
+  const { rawDamage, damageType, piercing, hits, elements } = input;
+  const typeLabel = getDamageTypeLabel(damageType);
+  const hitsNote = hits > 1 ? ` ×${hits} hits` : "";
   const piercingNote =
     piercing > 0 && damageType !== "unsoakable" ? `, ${piercing} piercing` : "";
   const elementNote =
@@ -668,27 +700,115 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
       ? ` [${elements.map(e => `${e.name.charAt(0).toUpperCase()}${e.name.slice(1)} Lv.${e.level}`).join(", ")}]`
       : "";
 
-  // Resolve attacker: prefer the first controlled token, fall back to assigned character
-  const controlledToken = (canvas as any)?.tokens?.controlled?.[0];
-  const attackerName: string =
-    controlledToken?.name ??
-    (game as any).user?.character?.name ??
-    (game as any).user?.name ??
-    "Unknown";
+  const attackerName = getAttackerName();
+  const targetNames = targets.map(t => t.name ?? "Unknown");
+  const targetSummary =
+    targetNames.length === 1
+      ? `<strong>${targetNames[0]}</strong>`
+      : `<strong>${targetNames.length} targets</strong>: ${targetNames.join(", ")}`;
 
   await ChatMessage.create({
-    speaker: ChatMessage.getSpeaker({ actor: actor as any }),
+    speaker: ChatMessage.getSpeaker({ actor: targets[0] as any }),
     content: `<div style="border-left:3px solid #c00;padding:4px 8px;font-size:13px">
-      <strong>${attackerName}</strong> → <strong>${actor.name}</strong><br>
+      <strong>${attackerName}</strong> → ${targetSummary}<br>
       <strong>${rawDamage}</strong> <strong>${typeLabel}</strong> damage${piercingNote}${hitsNote}${elementNote}
     </div>`
   });
+}
+
+async function applyDialogDamageToTargets(
+  actors: SystemActor[],
+  input: DamageDialogInput
+): Promise<void> {
+  const appliedActors: SystemActor[] = [];
+  const failedActors: string[] = [];
+
+  for (const actor of actors) {
+    try {
+      await applyDamageToSingleTarget(actor, input);
+      appliedActors.push(actor);
+    } catch (error) {
+      console.error("[DW] Failed to apply damage", actor, error);
+      failedActors.push(actor.name ?? "Unknown");
+    }
+  }
+
+  if (appliedActors.length > 0) {
+    await postDamageChatCard(appliedActors, input);
+  }
+
+  if (failedActors.length > 0) {
+    ui.notifications.warn(
+      `Damage was not applied to: ${failedActors.join(", ")}`
+    );
+  }
+}
+
+/**
+ * Show one damage dialog and apply that result to every actor provided.
+ */
+async function showDamageDialogForActors(actors: SystemActor[]): Promise<void> {
+  const validActors = actors.filter(Boolean);
+  if (!validActors.length) return;
+
+  const targetLabel =
+    validActors.length === 1
+      ? validActors[0].name
+      : `${validActors.length} targets`;
+
+  const input = await promptDamageDialog(targetLabel, validActors.length);
+  if (!input) return;
+
+  await applyDialogDamageToTargets(validActors, input);
+}
+
+function getCurrentTargetActors(): SystemActor[] {
+  const targets = [...((game as any).user?.targets ?? [])];
+  return targets
+    .map(target => target?.actor as SystemActor | null | undefined)
+    .filter((actor): actor is SystemActor => !!actor);
+}
+
+function uniqueActorsByUuid(actors: SystemActor[]): SystemActor[] {
+  const seen = new Set<string>();
+  const unique: SystemActor[] = [];
+  for (const actor of actors) {
+    const key = actor.uuid ?? actor.id ?? actor.name;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    unique.push(actor);
+  }
+  return unique;
+}
+
+/**
+ * Show the damage dialog for a given actor (targeted from the canvas).
+ * Calculates soak, applies final damage, and posts a chat card.
+ */
+async function showDamageDialog(actor: SystemActor): Promise<void> {
+  const targetActors = uniqueActorsByUuid(getCurrentTargetActors());
+  const hasTargets = targetActors.length > 0;
+  const applyToTargetsLabel = hasTargets
+    ? `Apply to all currently targeted tokens (${targetActors.length})`
+    : "Apply to all currently targeted tokens";
+
+  const input = await promptDamageDialog(actor.name, 1, {
+    showApplyToTargetsOption: hasTargets,
+    applyToTargetsLabel
+  });
+  if (!input) return;
+
+  const actorsToApply =
+    input.applyToCurrentTargets && hasTargets ? targetActors : [actor];
+  await applyDialogDamageToTargets(uniqueActorsByUuid(actorsToApply), input);
 }
 
 Hooks.once("ready", () => {
   (game as any).dimensionalwar = {
     /** Open the damage dialog for a given actor, then apply the result. */
     showDamageDialog,
+    /** Open one damage dialog and apply the result to all provided actors. */
+    showDamageDialogForActors,
     /** Calculate total effective soak for an actor system snapshot. */
     calcActorSoak,
     /** Directly apply damage to an actor without a dialog. */

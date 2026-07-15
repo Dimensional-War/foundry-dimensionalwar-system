@@ -12,10 +12,10 @@
  * Usage:
  *  1. Target one or more tokens on the canvas.
  *  2. Run this macro.
- *  3. Fill in the dialog for each target and click "Apply Damage".
+ *  3. Fill in one dialog and apply the same damage to all targets.
  */
 
-if (typeof game.dimensionalwar?.showDamageDialog !== "function") {
+if (typeof game.dimensionalwar?.showDamageDialogForActors !== "function") {
   ui.notifications.error(
     "Dimensional War system API not found. Make sure the system is fully loaded."
   );
@@ -29,16 +29,18 @@ if (!targets.length) {
   return;
 }
 
+const actors = [];
 for (const target of targets) {
-  const actor = target.actor;
-
-  if (!actor) {
+  if (!target.actor) {
     ui.notifications.warn(
       `Token "${target.name}" has no linked actor — skipping.`
     );
     continue;
   }
-
-  // Show dialog and apply; dialogs are shown sequentially (one per target).
-  await game.dimensionalwar.showDamageDialog(actor);
+  actors.push(target.actor);
 }
+
+if (!actors.length) return;
+
+// Show one dialog and apply to all valid targeted actors.
+await game.dimensionalwar.showDamageDialogForActors(actors);

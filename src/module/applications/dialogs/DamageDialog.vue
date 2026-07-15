@@ -150,6 +150,22 @@
         </div>
       </div>
 
+      <!-- Apply scope -->
+      <div v-if="props.showApplyToTargetsOption">
+        <label
+          class="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none"
+        >
+          <input
+            type="checkbox"
+            v-model="applyToCurrentTargets"
+            class="cursor-pointer"
+          />
+          {{
+            props.applyToTargetsLabel ?? "Apply to all currently targeted tokens"
+          }}
+        </label>
+      </div>
+
       <!-- ─── Buttons ─────────────────────────────────────────────────────── -->
       <div class="flex gap-2 mt-1">
         <button
@@ -180,6 +196,8 @@ interface Props {
   /** VueDialog instance — injected automatically by VueDialog.show() */
   dialog: VueDialog;
   targetName: string;
+  showApplyToTargetsOption?: boolean;
+  applyToTargetsLabel?: string;
 }
 
 const props = defineProps<Props>();
@@ -194,6 +212,7 @@ const elementName1 = ref("no_element");
 const elementLevel1 = ref(1);
 const elementName2 = ref("no_element");
 const elementLevel2 = ref(1);
+const applyToCurrentTargets = ref(false);
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 function handleApply() {
@@ -209,7 +228,9 @@ function handleApply() {
     damageType: damageType.value,
     piercing: damageType.value === "unsoakable" ? 0 : piercing.value,
     hits: Math.max(1, hits.value ?? 1),
-    elements
+    elements,
+    applyToCurrentTargets:
+      !!props.showApplyToTargetsOption && applyToCurrentTargets.value
   });
 }
 </script>
