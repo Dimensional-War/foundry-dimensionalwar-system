@@ -135,6 +135,7 @@
           v-model="system.combat.damage"
           :title="'Damage/Healing (1 or 1% or 1%c)'"
           placeholder="Damage (1 or 1%)"
+          @keydown="onDamageInputKeydown"
         />
       </div>
       <div class="flex-1">
@@ -640,6 +641,36 @@ function cycleDefenseEffect() {
 function cycleBraceType() {
   const nextOption = cycleOption(braceTypeOptions, system.combat.braceType);
   save("combat.braceType", nextOption.value);
+}
+
+function formatInputNumber(value: number): string {
+  if (Number.isInteger(value)) return String(value);
+  return String(parseFloat(value.toFixed(6)));
+}
+
+function onDamageInputKeydown(event: KeyboardEvent) {
+  if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+
+  event.preventDefault();
+
+  const raw = String(system.combat.damage ?? "").trim();
+  const suffixMatch = raw.match(/%c?$/i);
+  const suffix = suffixMatch ? suffixMatch[0] : "";
+  const numberPart = suffix ? raw.slice(0, -suffix.length).trim() : raw;
+
+  let value = parseFloat(numberPart);
+  if (!Number.isFinite(value)) value = 0;
+
+  let step = 1;
+  if (event.shiftKey) {
+    step = 1000;
+  } else if (event.ctrlKey) {
+    step = 100;
+  }
+
+  const direction = event.key === "ArrowUp" ? 1 : -1;
+  const nextValue = Math.max(0, value + direction * step);
+  system.combat.damage = `${formatInputNumber(nextValue)}${suffix}`;
 }
 
 function parseDmgValue(raw: string, cur: number, max: number): number {
