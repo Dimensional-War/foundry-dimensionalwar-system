@@ -81,10 +81,7 @@ function sanitizeElementName(name: unknown): string {
     .trim()
     .toLowerCase();
   if (!raw || raw === "none") return "no_element";
-  const aliases: Record<string, string> = {
-    holy: "light"
-  };
-  return aliases[raw] || raw;
+  return raw;
 }
 
 function unwrapFormat(raw: any): { data: any; forcedType: ActorType } {
@@ -431,67 +428,59 @@ function buildActorCreateData(rawEntry: any): {
       ? data.attacks
       : [];
 
-  const actorData = {
-    name,
-    type: actorType,
-    img: data.img || "icons/svg/mystery-man.svg",
-    system: {
-      resources: {
-        hp: {
-          min: -(Math.max(0, maxHp) * 3),
-          value: hpValue,
-          max: Math.max(0, maxHp)
-        },
-        mp: {
-          min: 0,
-          value: Math.max(0, mpValue),
-          max: Math.max(0, maxMp)
-        }
+  const actorSystem: Record<string, unknown> = {
+    resources: {
+      hp: {
+        min: -(Math.max(0, maxHp) * 3),
+        value: hpValue,
+        max: Math.max(0, maxHp)
       },
-      soak: {
-        physicalBase: Math.max(0, basePhysicalSoak),
-        magicalBase: Math.max(0, baseMagicalSoak),
-        armoredPhysical: Math.max(0, armorPhysical),
-        armoredMagical: Math.max(0, armorMagical),
-        shield: Math.max(0, shieldSoak),
-        shieldSoak: Math.max(0, shieldSoak),
-        shieldHitsMax: Math.max(0, shieldHitsMax),
-        shieldHitsLeft: Math.max(0, shieldHitsLeft)
-      },
-      elements: makeElementData(data.elements),
-      movementFlags: {
-        hasFlight,
-        hasParkour,
-        hasTeleport,
-        hasCrossCountry,
-        burrowing: Math.max(0, burrowing)
-      },
-      bonuses: {
-        senses: {
-          sight: toInt(sensesBonuses.sight, 0),
-          hearing: toInt(sensesBonuses.hearing, 0),
-          smell: toInt(sensesBonuses.smell, 0),
-          taste: toInt(sensesBonuses.taste, 0),
-          touch: toInt(sensesBonuses.touch, 0)
-        }
-      },
-      rolls: toRollEntries(rollSource)
-    }
+      mp: {
+        min: 0,
+        value: Math.max(0, mpValue),
+        max: Math.max(0, maxMp)
+      }
+    },
+    soak: {
+      physicalBase: Math.max(0, basePhysicalSoak),
+      magicalBase: Math.max(0, baseMagicalSoak),
+      armoredPhysical: Math.max(0, armorPhysical),
+      armoredMagical: Math.max(0, armorMagical),
+      shield: Math.max(0, shieldSoak),
+      shieldSoak: Math.max(0, shieldSoak),
+      shieldHitsMax: Math.max(0, shieldHitsMax),
+      shieldHitsLeft: Math.max(0, shieldHitsLeft)
+    },
+    elements: makeElementData(data.elements),
+    movementFlags: {
+      hasFlight,
+      hasParkour,
+      hasTeleport,
+      hasCrossCountry,
+      burrowing: Math.max(0, burrowing)
+    },
+    bonuses: {
+      senses: {
+        sight: toInt(sensesBonuses.sight, 0),
+        hearing: toInt(sensesBonuses.hearing, 0),
+        smell: toInt(sensesBonuses.smell, 0),
+        taste: toInt(sensesBonuses.taste, 0),
+        touch: toInt(sensesBonuses.touch, 0)
+      }
+    },
+    rolls: toRollEntries(rollSource)
   };
 
   if (perceptionValue !== undefined) {
     const perceptionLevel = toInt(perceptionValue, 0);
-    actorData.system.skills = {
-      ...(actorData.system.skills ?? {}),
+    actorSystem.skills = {
       senses: {
-        ...((actorData.system.skills as any)?.senses ?? {}),
         Perception: {
           level: perceptionLevel,
           bonus: 0
         }
       },
       utility: {
-        ...((actorData.system.skills as any)?.utility ?? {}),
         Perception: {
           level: perceptionLevel,
           bonus: 0
@@ -499,6 +488,13 @@ function buildActorCreateData(rawEntry: any): {
       }
     };
   }
+
+  const actorData = {
+    name,
+    type: actorType,
+    img: data.img || "icons/svg/mystery-man.svg",
+    system: actorSystem
+  };
 
   return { actorData, sourceData: data };
 }
