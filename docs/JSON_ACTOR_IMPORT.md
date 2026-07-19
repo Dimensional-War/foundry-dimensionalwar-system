@@ -338,9 +338,9 @@ Example:
         "shieldHitsLeft": 5
       },
       "elements": {
-        "element1Name": "void",
+        "element1Name": "darkness",
         "element1Level": 4,
-        "element2Name": "dark",
+        "element2Name": "holy",
         "element2Level": 3
       },
       "perception": 7,
