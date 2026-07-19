@@ -461,8 +461,6 @@ const actorSchema = () => ({
           "Artisan"
         ]
       }),
-      amount: new NumberField({ min: 1 }),
-      type: new StringField({ choices: ["die", "skill"] }),
       bonusFormula: new StringField(),
       bonusNumber: new NumberField(),
       reasonBase: new StringField()

@@ -29,6 +29,7 @@ import { DwRoll } from "./module/rolling/DwRoll";
 import { DwRollParser } from "./module/rolling/DwRollParser";
 import { DwSkillDiceTerm } from "./module/rolling/DwSkillDiceTerm";
 import { openCSBImportDialog } from "./module/utils/csb-import-dialog";
+import { openJsonActorImportDialog } from "./module/utils/json-actor-import-dialog";
 import { VueDialog } from "./module/applications/vue-dialog";
 import DamageDialog from "./module/applications/dialogs/DamageDialog.vue";
 import { calcActorSoak, applyDamageToActor } from "./module/utils/apply-damage";
@@ -507,51 +508,182 @@ Hooks.once("ready", () => {
   };
 });
 
-// ─── Add CSB Import Button to Actors Directory ───────────────────────────────
+// ─── Add Import Buttons to Actors Directory ─────────────────────────────────
 
-Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement) => {
-  if (!element) return;
+function resolveHTMLElement(input: any): HTMLElement | null {
+  if (input instanceof HTMLElement) return input;
+  if (input?.[0] instanceof HTMLElement) return input[0];
+  if (input?.element?.[0] instanceof HTMLElement) return input.element[0];
+  if (input?.element instanceof HTMLElement) return input.element;
+  return null;
+}
 
-  const header = element.querySelector(".directory-header");
-  if (!header) return;
+function injectActorImportButtons(rootLike: any): void {
+  const resolvedRoot = resolveHTMLElement(rootLike);
+  const actorsRoot = resolvedRoot?.matches?.("#actors")
+    ? resolvedRoot
+    : resolvedRoot?.querySelector?.("#actors") ||
+      document.querySelector("#actors");
+  if (!(actorsRoot instanceof HTMLElement)) return;
 
-  // Check if button already exists
-  if (header.querySelector(".csb-import-btn")) return;
+  const header =
+    actorsRoot.querySelector("header.directory-header") ||
+    actorsRoot.querySelector(".directory-header") ||
+    actorsRoot;
 
-  // Create import button
-  const importBtn = document.createElement("button");
-  importBtn.className = "csb-import-btn";
-  importBtn.title = "Import CSB Actors";
-  importBtn.type = "button";
-  importBtn.innerHTML = '<i class="fas fa-file-import"></i> Import CSB';
+  const hasCsbButton = !!actorsRoot.querySelector(".csb-import-btn");
+  const hasJsonButton = !!actorsRoot.querySelector(".json-import-btn");
+  if (hasCsbButton && hasJsonButton) return;
 
-  importBtn.addEventListener("click", () => {
-    openCSBImportDialog();
+  let importBtn: HTMLButtonElement | null = null;
+  let jsonImportBtn: HTMLButtonElement | null = null;
+
+  if (!hasCsbButton) {
+    importBtn = document.createElement("button");
+    importBtn.className = "csb-import-btn";
+    importBtn.title = "Import CSB Actors";
+    importBtn.type = "button";
+    importBtn.innerHTML =
+      '<i class="fas fa-file-import"></i><span>Import CSB</span>';
+    importBtn.addEventListener("click", () => {
+      openCSBImportDialog();
+    });
+  }
+
+  if (!hasJsonButton) {
+    jsonImportBtn = document.createElement("button");
+    jsonImportBtn.className = "json-import-btn";
+    jsonImportBtn.title = "Import JSON NPCs / Monsters";
+    jsonImportBtn.type = "button";
+    jsonImportBtn.innerHTML =
+      '<i class="fas fa-file-code"></i><span>Import JSON</span>';
+    jsonImportBtn.addEventListener("click", () => {
+      openJsonActorImportDialog();
+    });
+  }
+
+  const createBtn = actorsRoot.querySelector(
+    '[data-action="createEntry"], [data-action="createDocument"]'
+  );
+  if (createBtn && createBtn.parentElement) {
+    if (importBtn) createBtn.parentElement.appendChild(importBtn);
+    if (jsonImportBtn) createBtn.parentElement.appendChild(jsonImportBtn);
+    return;
+  }
+
+  const headerActions =
+    actorsRoot.querySelector(".header-actions.action-buttons") ||
+    actorsRoot.querySelector(".action-buttons");
+  if (headerActions) {
+    if (importBtn) headerActions.appendChild(importBtn);
+    if (jsonImportBtn) headerActions.appendChild(jsonImportBtn);
+    return;
+  }
+
+  const footerActions = actorsRoot.querySelector("footer.action-buttons");
+  if (footerActions) {
+    if (importBtn) footerActions.appendChild(importBtn);
+    if (jsonImportBtn) footerActions.appendChild(jsonImportBtn);
+    return;
+  }
+
+  if (importBtn) header.appendChild(importBtn);
+  if (jsonImportBtn) header.appendChild(jsonImportBtn);
+}
+
+function injectActorImportFooterButtons(rootLike: any): void {
+  const resolvedRoot = resolveHTMLElement(rootLike);
+  const actorsRoot = resolvedRoot?.matches?.("#actors")
+    ? resolvedRoot
+    : resolvedRoot?.querySelector?.("#actors") ||
+      document.querySelector("#actors");
+  if (!(actorsRoot instanceof HTMLElement)) return;
+
+  const footer = actorsRoot.querySelector(".directory-footer");
+  if (!(footer instanceof HTMLElement)) return;
+
+  if (!footer.querySelector(".csb-import-btn")) {
+    const csbBtn = document.createElement("button");
+    csbBtn.className = "csb-import-btn";
+    csbBtn.type = "button";
+    csbBtn.title = "Import CSB Actors";
+    csbBtn.innerHTML =
+      '<i class="fas fa-file-import"></i><span>Import CSB</span>';
+    csbBtn.addEventListener("click", () => openCSBImportDialog());
+    footer.appendChild(csbBtn);
+  }
+
+  if (!footer.querySelector(".json-import-btn")) {
+    const jsonBtn = document.createElement("button");
+    jsonBtn.className = "json-import-btn";
+    jsonBtn.type = "button";
+    jsonBtn.title = "Import JSON NPCs / Monsters";
+    jsonBtn.innerHTML =
+      '<i class="fas fa-file-code"></i><span>Import JSON</span>';
+    jsonBtn.addEventListener("click", () => openJsonActorImportDialog());
+    footer.appendChild(jsonBtn);
+  }
+}
+
+function injectActorImportButtonsFromUiSidebar(): void {
+  const actorTabElement =
+    (ui as any)?.actors?.element?.[0] ||
+    (ui as any)?.sidebar?.tabs?.actors?.element?.[0] ||
+    document.querySelector("#actors");
+
+  if (!(actorTabElement instanceof HTMLElement)) return;
+  injectActorImportButtons(actorTabElement);
+}
+
+let actorDirectoryButtonObserver: MutationObserver | null = null;
+
+function startActorDirectoryButtonObserver(): void {
+  if (actorDirectoryButtonObserver) return;
+
+  const sidebar =
+    document.querySelector("#sidebar") || document.querySelector("body");
+  if (!(sidebar instanceof HTMLElement)) return;
+
+  actorDirectoryButtonObserver = new MutationObserver(() => {
+    injectActorImportButtonsFromUiSidebar();
+    injectActorImportButtons(sidebar);
+    injectActorImportFooterButtons(sidebar);
   });
 
-  // Try multiple insertion strategies
-  let inserted = false;
+  actorDirectoryButtonObserver.observe(sidebar, {
+    childList: true,
+    subtree: true
+  });
 
-  // Strategy 1: After create button
-  const createBtn = header.querySelector('[data-action="createDocument"]');
-  if (createBtn && createBtn.parentElement) {
-    createBtn.parentElement.insertBefore(importBtn, createBtn.nextSibling);
-    inserted = true;
-  }
+  // Immediate pass after observer starts.
+  injectActorImportButtonsFromUiSidebar();
+  injectActorImportButtons(sidebar);
+  injectActorImportFooterButtons(sidebar);
+}
 
-  // Strategy 2: In action-buttons container
-  if (!inserted) {
-    const actionButtons = header.querySelector(".action-buttons");
-    if (actionButtons) {
-      actionButtons.appendChild(importBtn);
-      inserted = true;
-    }
-  }
+Hooks.on("renderActorDirectory", (_app: any, element: HTMLElement | any) => {
+  injectActorImportButtons(element);
+  injectActorImportFooterButtons(element);
+});
 
-  // Strategy 3: Directly to header as fallback
-  if (!inserted) {
-    header.appendChild(importBtn);
-  }
+Hooks.on("ready", () => {
+  const sidebar = document.querySelector("#sidebar");
+  injectActorImportButtonsFromUiSidebar();
+  injectActorImportButtons(sidebar);
+  injectActorImportFooterButtons(sidebar);
+  startActorDirectoryButtonObserver();
+
+  // Extra delayed pass for late-rendered sidebars in some clients.
+  setTimeout(() => {
+    injectActorImportButtonsFromUiSidebar();
+    injectActorImportButtons(document.querySelector("#sidebar"));
+    injectActorImportFooterButtons(document.querySelector("#sidebar"));
+  }, 500);
+});
+
+Hooks.on("changeSidebarTab", (_tab: any) => {
+  injectActorImportButtonsFromUiSidebar();
+  injectActorImportFooterButtons(document.querySelector("#sidebar"));
 });
 
 // ─── game.dimensionalwar: Public API for macros ──────────────────────────────

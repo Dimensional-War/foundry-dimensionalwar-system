@@ -7,60 +7,60 @@
         <button
           type="button"
           class="px-3 py-2 border border-green-600 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors text-left"
-          @click="rollPerception('Sight')"
+          @click="rollPerception('sight')"
         >
-          👁️ Sight (Level {{ getSenseSkill("Sight").level
+          👁️ Sight (Level {{ getPerceptionSkill('sight').level
           }}{{
-            getSenseSkill("Sight").bonus !== 0
-              ? ` ${getSenseSkill("Sight").bonus >= 0 ? "+" : ""}${getSenseSkill("Sight").bonus}`
+            getPerceptionSkill('sight').bonus !== 0
+              ? ` ${getPerceptionSkill('sight').bonus >= 0 ? "+" : ""}${getPerceptionSkill('sight').bonus}`
               : ""
           }})
         </button>
         <button
           type="button"
           class="px-3 py-2 border border-green-600 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors text-left"
-          @click="rollPerception('Hearing')"
+          @click="rollPerception('hearing')"
         >
-          👂 Hearing (Level {{ getSenseSkill("Hearing").level
+          👂 Hearing (Level {{ getPerceptionSkill('hearing').level
           }}{{
-            getSenseSkill("Hearing").bonus !== 0
-              ? ` ${getSenseSkill("Hearing").bonus >= 0 ? "+" : ""}${getSenseSkill("Hearing").bonus}`
+            getPerceptionSkill('hearing').bonus !== 0
+              ? ` ${getPerceptionSkill('hearing').bonus >= 0 ? "+" : ""}${getPerceptionSkill('hearing').bonus}`
               : ""
           }})
         </button>
         <button
           type="button"
           class="px-3 py-2 border border-green-600 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors text-left"
-          @click="rollPerception('Smell')"
+          @click="rollPerception('smell')"
         >
-          👃 Smell (Level {{ getSenseSkill("Smell").level
+          👃 Smell (Level {{ getPerceptionSkill('smell').level
           }}{{
-            getSenseSkill("Smell").bonus !== 0
-              ? ` ${getSenseSkill("Smell").bonus >= 0 ? "+" : ""}${getSenseSkill("Smell").bonus}`
+            getPerceptionSkill('smell').bonus !== 0
+              ? ` ${getPerceptionSkill('smell').bonus >= 0 ? "+" : ""}${getPerceptionSkill('smell').bonus}`
               : ""
           }})
         </button>
         <button
           type="button"
           class="px-3 py-2 border border-green-600 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors text-left"
-          @click="rollPerception('Taste')"
+          @click="rollPerception('taste')"
         >
-          👅 Taste (Level {{ getSenseSkill("Taste").level
+          👅 Taste (Level {{ getPerceptionSkill('taste').level
           }}{{
-            getSenseSkill("Taste").bonus !== 0
-              ? ` ${getSenseSkill("Taste").bonus >= 0 ? "+" : ""}${getSenseSkill("Taste").bonus}`
+            getPerceptionSkill('taste').bonus !== 0
+              ? ` ${getPerceptionSkill('taste').bonus >= 0 ? "+" : ""}${getPerceptionSkill('taste').bonus}`
               : ""
           }})
         </button>
         <button
           type="button"
           class="px-3 py-2 border border-green-600 rounded bg-green-600 text-white hover:bg-green-700 cursor-pointer transition-colors text-left"
-          @click="rollPerception('Touch')"
+          @click="rollPerception('touch')"
         >
-          ✋ Touch (Level {{ getSenseSkill("Touch").level
+          ✋ Touch (Level {{ getPerceptionSkill('touch').level
           }}{{
-            getSenseSkill("Touch").bonus !== 0
-              ? ` ${getSenseSkill("Touch").bonus >= 0 ? "+" : ""}${getSenseSkill("Touch").bonus}`
+            getPerceptionSkill('touch').bonus !== 0
+              ? ` ${getPerceptionSkill('touch').bonus >= 0 ? "+" : ""}${getPerceptionSkill('touch').bonus}`
               : ""
           }})
         </button>
@@ -163,20 +163,11 @@
             </select>
           </div>
           <div class="basis-1/6">
-            <select
-              v-model="entry.type"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="die">Die</option>
-              <option value="skill">Skill</option>
-            </select>
-          </div>
-          <div class="basis-1/6">
             <input
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               v-model="entry.bonusFormula"
-              placeholder="Formula (e.g. 1d20)"
+              placeholder="Formula (e.g. 1d20 or 1s5)"
             />
           </div>
           <div class="w-16">
@@ -195,7 +186,7 @@
               placeholder="Reason"
             />
           </div>
-          <div class="w-auto">
+          <div class="basis-auto">
             <button
               type="button"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -204,6 +195,8 @@
             >
               🎲
             </button>
+          </div>
+          <div class="basis-auto ms-auto">
             <button
               type="button"
               class="px-3 py-1.5 border border-red-600 rounded bg-red-600 text-white hover:bg-red-700 cursor-pointer transition-colors ml-1"
@@ -238,8 +231,6 @@ import type { SystemActor as SystemActorType } from "../../documents";
 
 type RollEntry = {
   category: string;
-  amount: number;
-  type: string;
   bonusFormula: string;
   bonusNumber: number;
   reasonBase: string;
@@ -250,6 +241,10 @@ type DwSystem = {
   skills?: {
     movement?: Record<string, any>;
     senses?: Record<string, any>;
+    utility?: Record<string, any>;
+  };
+  bonuses?: {
+    senses?: Record<string, number>;
   };
   movementFlags?: {
     hasFlight: boolean;
@@ -304,26 +299,19 @@ function getMovementSkill(skillName: string): { level: number; bonus: number } {
   };
 }
 
-// Helper to get skill level and bonus for sense skills
-function getSenseSkill(senseName: string): { level: number; bonus: number } {
-  const skill = (system as any).skills?.senses?.[senseName];
-  if (!skill) return { level: 0, bonus: 0 };
+// Helper to get Perception level and sense-specific bonus
+function getPerceptionSkill(senseName = "sight"): { level: number; bonus: number } {
+  const level = system.skills?.utility?.Perception?.level ?? 0;
+  const senseBonus = system.bonuses?.senses?.[senseName] ?? 0;
 
-  // Handle both simple structure {level, bonus} and array structure
-  if (Array.isArray(skill)) {
-    return {
-      level: skill[0]?.level ?? 0,
-      bonus: skill[0]?.bonus ?? 0
-    };
-  }
   return {
-    level: skill.level ?? 0,
-    bonus: skill.bonus ?? 0
+    level,
+    bonus: senseBonus
   };
 }
 
 // Roll a perception check for a specific sense
-async function rollPerception(senseType: string) {
+async function rollPerception(senseType: "sight" | "hearing" | "smell" | "taste" | "touch") {
   try {
     await rollPerceptionCheck(actor as unknown as SystemActorType, senseType);
   } catch (e) {
@@ -366,25 +354,32 @@ async function rollMovement(type: string, speed: number) {
 function addRoll() {
   const newRoll: RollEntry = {
     category: "Offensive",
-    amount: 1,
-    type: "die",
-    bonusFormula: "1d20",
+    bonusFormula: "",
     bonusNumber: 0,
     reasonBase: ""
   };
   system.rolls.push(newRoll);
 }
 
-function removeRoll(idx: number) {
+async function removeRoll(idx: number) {
+  const entry = system.rolls[idx];
+  const label = entry?.reasonBase?.trim() || entry?.category || "this roll";
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    content: `<p>Delete <strong>${label}</strong>?</p>`,
+    modal: true
+  });
+
+  if (!confirmed) return;
   system.rolls.splice(idx, 1);
 }
 
 async function doRoll(idx: number) {
   const entry = system.rolls[idx];
-  if (!entry?.bonusFormula) return;
+  if (!entry) return;
+  const formulaBase = entry.bonusFormula?.trim() || "1d20";
   const formula = entry.bonusNumber
-    ? `${entry.bonusFormula} + ${entry.bonusNumber}`
-    : entry.bonusFormula;
+    ? `${formulaBase} + ${entry.bonusNumber}`
+    : formulaBase;
   try {
     const roll = await Roll.create(formula);
     await roll.evaluate();

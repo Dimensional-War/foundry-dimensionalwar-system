@@ -119,8 +119,6 @@ export declare namespace BaseData {
         | "Vehicle Operation"
         | "Non-Combat"
         | "Artisan";
-      amount: number;
-      type: string;
       bonusFormula: string;
       bonusNumber: number;
       reasonBase: string;
