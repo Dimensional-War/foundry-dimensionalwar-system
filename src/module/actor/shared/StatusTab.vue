@@ -7,13 +7,12 @@
         <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
           <div
             class="absolute inset-y-0 left-0 flex items-center justify-center transition-all"
-            :class="
-              hpPercent < 25
-                ? 'bg-red-600'
-                : hpPercent < 50
-                  ? 'bg-yellow-500'
-                  : 'bg-green-600'
-            "
+            :class="hpPercent < 25
+              ? 'bg-red-600'
+              : hpPercent < 50
+                ? 'bg-yellow-500'
+                : 'bg-green-600'
+              "
             :style="`width: ${hpPercent}%`"
           >
             <span
@@ -32,33 +31,30 @@
           <button
             type="button"
             class="grow px-3 py-1.5 border border-gray-600 cursor-pointer transition-colors first:rounded-l last:rounded-r -ml-px first:ml-0"
-            :class="
-              system.combat.emp
-                ? 'bg-blue-600 text-white border-blue-600 z-10'
-                : ' text-gray-700 hover:bg-gray-50'
-            "
+            :class="system.combat.emp
+              ? 'bg-blue-600 text-white border-blue-600 z-10'
+              : ' text-gray-700 hover:bg-gray-50'
+              "
             @click="save('combat.emp', !system.combat.emp)"
           >
             EMP
           </button>
-          <select
-            v-model="system.combat.defenseEffect"
-            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
+            :title="currentDefenseEffect.label"
+            @click="cycleDefenseEffect"
           >
-            <option value="no_effect">No Defense Effect</option>
-            <option value="protect">Protect</option>
-            <option value="shell">Shell</option>
-            <option value="wall">Wall</option>
-            <option value="shield">Shield</option>
-          </select>
-          <select
-            v-model="system.combat.braceType"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+            <i :class="currentDefenseEffect.iconClass" aria-hidden="true" :title="currentDefenseEffect.label"></i>
+          </button>
+          <button
+            type="button"
+            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
+            :title="currentBraceType.label"
+            @click="cycleBraceType"
           >
-            <option value="no_brace">No Brace</option>
-            <option value="brace">Brace</option>
-            <option value="half_brace">Half Brace</option>
-          </select>
+            <i :class="currentBraceType.iconClass" aria-hidden="true" :title="currentBraceType.label"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -97,11 +93,10 @@
           <button
             type="button"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors"
-            :class="
-              system.soak.shieldHitsLeft > 0
-                ? 'bg-blue-600 text-white border-blue-600 z-10'
-                : ' text-gray-700 hover:bg-gray-50'
-            "
+            :class="system.soak.shieldHitsLeft > 0
+              ? 'bg-blue-600 text-white border-blue-600 z-10'
+              : ' text-gray-700 hover:bg-gray-50'
+              "
             @click="resetShield"
             :title="'Reset shield hits to max'"
           >
@@ -110,11 +105,10 @@
           <button
             type="button"
             class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r cursor-pointer transition-colors -ml-px"
-            :class="
-              system.combat.unsoakable
-                ? 'bg-blue-600 text-white border-blue-600 z-10'
-                : ' text-gray-700 hover:bg-gray-50'
-            "
+            :class="system.combat.unsoakable
+              ? 'bg-blue-600 text-white border-blue-600 z-10'
+              : ' text-gray-700 hover:bg-gray-50'
+              "
             @click="save('combat.unsoakable', !system.combat.unsoakable)"
           >
             Unsoakable
@@ -303,9 +297,8 @@
             v-model.number="spendLbAmount"
             min="0"
             :max="limitBreakFullBars"
-            :title="
-              'Number of full bars to spend (max: ' + limitBreakFullBars + ')'
-            "
+            :title="'Number of full bars to spend (max: ' + limitBreakFullBars + ')'
+              "
             placeholder="Bars"
           />
           <button
@@ -423,6 +416,34 @@ import {
   ELEMENTAL_RESISTANCE_MULT as elementalResistance
 } from "../../utils/elements";
 import { SystemActor } from "~/module/documents";
+
+const defenseEffectOptions = [
+  { value: "no_effect", label: "No Defense Effect", iconClass: "fa-solid fa-ban" },
+  { value: "protect", label: "Protect", iconClass: "fa-solid fa-shield-halved" },
+  { value: "shell", label: "Shell", iconClass: "fa-solid fa-circle-notch" },
+  { value: "wall", label: "Wall", iconClass: "fa-solid fa-block-brick" },
+  { value: "shield", label: "Shield", iconClass: "fa-solid fa-shield" }
+];
+
+const braceTypeOptions = [
+  { value: "no_brace", label: "No Brace", iconClass: "fa-solid fa-shield-slash" },
+  { value: "brace", label: "Brace", iconClass: "fa-solid fa-shield" },
+  { value: "half_brace", label: "Half Brace", iconClass: "fa-solid fa-shield-halved" }
+];
+
+const currentDefenseEffect = computed(
+  () =>
+    defenseEffectOptions.find(
+      option => option.value === system.combat.defenseEffect
+    ) ?? defenseEffectOptions[0]
+);
+
+const currentBraceType = computed(
+  () =>
+    braceTypeOptions.find(
+      option => option.value === system.combat.braceType
+    ) ?? braceTypeOptions[0]
+);
 
 type DwSystem = {
   resources: {
@@ -600,6 +621,25 @@ function save(path: string, value: unknown) {
   obj[keys[keys.length - 1]] = value;
   // Persist to Foundry
   sheet.saveSystem({ [path]: value });
+}
+
+function cycleOption(options: { value: string }[], currentValue: string) {
+  const currentIndex = options.findIndex(option => option.value === currentValue);
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % options.length : 0;
+  return options[nextIndex];
+}
+
+function cycleDefenseEffect() {
+  const nextOption = cycleOption(
+    defenseEffectOptions,
+    system.combat.defenseEffect
+  );
+  save("combat.defenseEffect", nextOption.value);
+}
+
+function cycleBraceType() {
+  const nextOption = cycleOption(braceTypeOptions, system.combat.braceType);
+  save("combat.braceType", nextOption.value);
 }
 
 function parseDmgValue(raw: string, cur: number, max: number): number {
@@ -915,9 +955,9 @@ async function modifyGauge() {
   if (system.gauges.hasLimitBreak) {
     const newVal = isRelative
       ? Math.max(
-          0,
-          Math.min(limitBreakMax.value, system.gauges.limitBreak + amount)
-        )
+        0,
+        Math.min(limitBreakMax.value, system.gauges.limitBreak + amount)
+      )
       : Math.max(0, Math.min(limitBreakMax.value, amount));
     system.gauges.limitBreak = newVal;
     updates["gauges.limitBreak"] = newVal;
