@@ -224,6 +224,122 @@ function makeElementData(source: any): Record<string, any> {
   return out;
 }
 
+function asObject(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function setNumberField(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown
+): void {
+  if (value === undefined || value === null) return;
+  target[key] = toNumber(value, 0);
+}
+
+function setStringField(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown
+): void {
+  if (value === undefined || value === null) return;
+  target[key] = String(value);
+}
+
+function setBooleanField(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown
+): void {
+  if (value === undefined || value === null) return;
+  target[key] = toBool(value, false);
+}
+
+function makePrototypeTokenData(source: any): Record<string, unknown> | null {
+  const src = asObject(source);
+  if (!src) return null;
+
+  const tokenSource =
+    asObject(src.prototypeToken) ??
+    asObject(src.token) ??
+    ({} as Record<string, unknown>);
+
+  const sightSource =
+    asObject(tokenSource.sight) ??
+    asObject(tokenSource.vision) ??
+    asObject(src.sight) ??
+    asObject(src.vision);
+
+  const lightSource = asObject(tokenSource.light) ?? asObject(src.light);
+
+  const prototypeToken: Record<string, unknown> = {};
+
+  if (sightSource) {
+    const sight: Record<string, unknown> = {};
+
+    const sightEnabled =
+      sightSource.enabled ?? sightSource.active ?? sightSource.hasVision;
+    setBooleanField(sight, "enabled", sightEnabled);
+    setNumberField(
+      sight,
+      "range",
+      sightSource.range ?? sightSource.distance ?? sightSource.radius
+    );
+    setNumberField(sight, "angle", sightSource.angle);
+    setStringField(
+      sight,
+      "visionMode",
+      sightSource.visionMode ?? sightSource.mode
+    );
+    setStringField(sight, "color", sightSource.color);
+    setNumberField(sight, "brightness", sightSource.brightness);
+    setNumberField(sight, "saturation", sightSource.saturation);
+    setNumberField(sight, "contrast", sightSource.contrast);
+    setNumberField(sight, "attenuation", sightSource.attenuation);
+
+    if (Object.keys(sight).length) {
+      prototypeToken.sight = sight;
+    }
+  }
+
+  if (lightSource) {
+    const light: Record<string, unknown> = {};
+
+    setNumberField(
+      light,
+      "bright",
+      lightSource.bright ?? lightSource.brightRadius
+    );
+    setNumberField(light, "dim", lightSource.dim ?? lightSource.dimRadius);
+    setNumberField(light, "angle", lightSource.angle);
+    setStringField(light, "color", lightSource.color);
+    setNumberField(light, "alpha", lightSource.alpha);
+    setNumberField(light, "coloration", lightSource.coloration);
+    setNumberField(light, "luminosity", lightSource.luminosity);
+    setNumberField(light, "saturation", lightSource.saturation);
+    setNumberField(light, "attenuation", lightSource.attenuation);
+
+    const animationSource = asObject(lightSource.animation);
+    if (animationSource) {
+      const animation: Record<string, unknown> = {};
+      setStringField(animation, "type", animationSource.type);
+      setNumberField(animation, "speed", animationSource.speed);
+      setNumberField(animation, "intensity", animationSource.intensity);
+      setBooleanField(animation, "reverse", animationSource.reverse);
+      if (Object.keys(animation).length) {
+        light.animation = animation;
+      }
+    }
+
+    if (Object.keys(light).length) {
+      prototypeToken.light = light;
+    }
+  }
+
+  return Object.keys(prototypeToken).length ? prototypeToken : null;
+}
+
 function applySkills(targetSkills: any, sourceSkills: any): void {
   if (!targetSkills || !sourceSkills || typeof sourceSkills !== "object")
     return;
@@ -489,12 +605,17 @@ function buildActorCreateData(rawEntry: any): {
     };
   }
 
-  const actorData = {
+  const actorData: any = {
     name,
     type: actorType,
     img: data.img || "icons/svg/mystery-man.svg",
     system: actorSystem
   };
+
+  const prototypeTokenData = makePrototypeTokenData(data);
+  if (prototypeTokenData) {
+    actorData.prototypeToken = prototypeTokenData;
+  }
 
   return { actorData, sourceData: data };
 }

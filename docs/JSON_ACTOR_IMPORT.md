@@ -148,6 +148,74 @@ Supported under `movement` or `movementFlags`:
 - `running` / `crossCountry` / `hasCrossCountry`
 - `burrowing`
 
+### Prototype token vision and light
+
+You can import token vision/light and have it written to the actor prototype token.
+
+Supported source locations (first matching object is used):
+
+- `prototypeToken.sight` or `prototypeToken.vision`
+- `token.sight` or `token.vision`
+- top-level `sight` or `vision`
+- `prototypeToken.light`, `token.light`, or top-level `light`
+
+Mapped destination:
+
+- `actor.prototypeToken.sight`
+- `actor.prototypeToken.light`
+
+Supported sight/vision keys:
+
+- `enabled` (also accepts `active`, `hasVision`)
+- `range` (also accepts `distance`, `radius`)
+- `angle`
+- `visionMode` (also accepts `mode`)
+- `color`
+- `brightness`
+- `saturation`
+- `contrast`
+- `attenuation`
+
+Supported light keys:
+
+- `bright` (also accepts `brightRadius`)
+- `dim` (also accepts `dimRadius`)
+- `angle`
+- `color`
+- `alpha`
+- `coloration`
+- `luminosity`
+- `saturation`
+- `attenuation`
+- `animation` with: `type`, `speed`, `intensity`, `reverse`
+
+Example:
+
+```json
+{
+  "name": "Torch Sentry",
+  "type": "enemy",
+  "token": {
+    "vision": {
+      "enabled": true,
+      "range": 60,
+      "visionMode": "basic"
+    },
+    "light": {
+      "bright": 20,
+      "dim": 40,
+      "color": "#ffcc66",
+      "alpha": 0.35,
+      "animation": {
+        "type": "torch",
+        "speed": 3,
+        "intensity": 4
+      }
+    }
+  }
+}
+```
+
 ### Perception level
 
 Use `perception` for the Perception skill level. The importer applies it to both:
