@@ -33,19 +33,18 @@ Examples:
 
 Each entry can be either direct actor data or wrapped in one of these keys:
 
-
 - `npc`
-   ```json
-      "bonuses": {
-        "senses": {
-          "sight": 7,
-          "hearing": 3,
-          "smell": 0,
-          "taste": 0,
-          "touch": 0
-        }
-      },
-   ```
+  ```json
+     "bonuses": {
+       "senses": {
+         "sight": 7,
+         "hearing": 3,
+         "smell": 0,
+         "taste": 0,
+         "touch": 0
+       }
+     },
+  ```
 
 Example:
 
@@ -57,7 +56,7 @@ Example:
     "hp": { "max": 140 }
   }
 }
-````
+```
 
 ## Type mapping
 
@@ -281,6 +280,7 @@ Each entry supports:
 - `category` (defaults to `Offensive`; `attack`/`attacks` maps to `Offensive`)
 - `bonusFormula` (or alias `formula`; optional, defaults to `1d20`)
 - `bonusNumber` (or alias `bonus`)
+- `mpCost` (or alias `cost`)
 - `reasonBase` (or alias `name`, default `Attack`)
 
 The formula defines the dice count. For normal rolls, use `1d20`, `2d6`, etc.
@@ -384,12 +384,14 @@ Example:
             "reasonBase": "Pounce",
             "category": "Offensive",
             "formula": "1d20",
+            "mpCost": 100,
             "bonusNumber": 6
           },
           {
             "reasonBase": "Track",
             "category": "Perception",
             "formula": "1d20",
+            "mpCost": 0,
             "bonusNumber": 4
           }
         ]
@@ -431,18 +433,21 @@ Example:
           "name": "Rift Lance",
           "category": "attack",
           "formula": "1d20",
+          "mpCost": 0,
           "bonus": 11
         },
         {
           "name": "Gravity Crush",
           "category": "Offensive",
           "formula": "1d20",
+          "mpCost": 1000,
           "bonusNumber": 9
         },
         {
           "name": "Void Sense",
           "category": "Perception",
           "formula": "1d20",
+          "mpCost": 0,
           "bonusNumber": 8
         }
       ]

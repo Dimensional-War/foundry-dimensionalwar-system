@@ -153,6 +153,7 @@
       <div v-for="(entry, idx) in system.rolls" :key="idx" class="border-b p-2">
         <div class="flex flex-wrap gap-1">
           <div class="basis-1/4">
+            Category
             <select
               v-model="entry.category"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -163,6 +164,7 @@
             </select>
           </div>
           <div class="basis-1/6">
+            Formula
             <input
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -170,7 +172,8 @@
               placeholder="Formula (e.g. 1s5, 1s5*2, 1s5*2c,3f)"
             />
           </div>
-          <div class="w-16">
+          <div class="basis-1/10">
+            Bonus
             <input
               type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -178,18 +181,20 @@
               placeholder="Bonus"
             />
           </div>
-          <div class="basis-1/4">
+          <div class="basis-1/10">
+            MP Cost?
             <input
-              type="text"
+              type="number"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model="entry.reasonBase"
-              placeholder="Reason"
+              v-model.number="entry.mpCost"
+              placeholder="MP Cost"
             />
           </div>
           <div class="basis-auto">
+            Roll
             <button
               type="button"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              class="block px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
               @click="doRoll(idx)"
               :title="'Roll'"
             >
@@ -205,6 +210,17 @@
             >
               ✕
             </button>
+          </div>
+        </div>
+        <div>
+          <div class="basis-1/5">
+            Reason
+            <input
+              type="text"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model="entry.reasonBase"
+              placeholder="Reason"
+            />
           </div>
         </div>
       </div>
@@ -233,6 +249,7 @@ type RollEntry = {
   category: string;
   bonusFormula: string;
   bonusNumber: number;
+  mpCost: number;
   reasonBase: string;
 };
 
@@ -255,7 +272,7 @@ type DwSystem = {
   };
 };
 
-type SystemActor = Actor & {
+type SystemActor = SystemActorType & {
   walkingSpeed: number;
   acrobaticsSpeed: number;
   swimmingSpeed: number;
@@ -356,6 +373,7 @@ function addRoll() {
     category: "Offensive",
     bonusFormula: "",
     bonusNumber: 0,
+    mpCost: 0,
     reasonBase: ""
   };
   system.rolls.push(newRoll);
@@ -381,7 +399,20 @@ async function doRoll(idx: number) {
     ? `${formulaBase} + ${entry.bonusNumber}`
     : formulaBase;
   try {
-    const roll = await Roll.create(formula);
+    if (entry.mpCost > 0) {
+      // @ts-expect-error - SystemActor has resources.mp.value
+      if (system.resources.mp.value < entry.mpCost) {
+        ui.notifications?.warn(`Not enough MP to perform this roll.`);
+        return;
+      }
+      // @ts-expect-error - SystemActor has resources.mp.value
+      system.resources.mp.value -= entry.mpCost;
+    }
+  } catch (e) {
+    ui.notifications?.error(`Failed to deduct MP: ${e}`);
+  }
+  try {
+    const roll = Roll.create(formula);
     await roll.evaluate();
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: actor as any }),

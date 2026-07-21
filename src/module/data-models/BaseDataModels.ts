@@ -463,6 +463,12 @@ const actorSchema = () => ({
       }),
       bonusFormula: new StringField(),
       bonusNumber: new NumberField(),
+      mpCost: new NumberField({
+        required: true,
+        integer: true,
+        min: 0,
+        initial: 0
+      }),
       reasonBase: new StringField()
     })
   ),

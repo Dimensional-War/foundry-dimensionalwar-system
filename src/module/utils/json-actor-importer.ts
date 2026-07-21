@@ -131,6 +131,7 @@ function toRollEntries(sourceRolls: any[]): any[] {
     category: normalizeRollCategory(roll?.category),
     bonusFormula: String(roll?.bonusFormula ?? roll?.formula ?? "1d20"),
     bonusNumber: toInt(roll?.bonusNumber ?? roll?.bonus, 0),
+    mpCost: toInt(roll?.mpCost ?? roll?.cost ?? 0, 0),
     reasonBase: String(roll?.reasonBase ?? roll?.name ?? "Attack")
   }));
 }
