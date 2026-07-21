@@ -1,0 +1,35 @@
+<div class="dice-roll" data-action="expandRoll">
+  <div class="dice-result">
+    {{#each rollGroups}}
+    {{#if this.formulaLines}}
+    <div class="dice-formula">
+      {{#each this.formulaLines}}<div>{{this}}</div>{{/each}}
+    </div>
+    {{/if}}
+    <div class="dice-tooltip">
+      <div class="wrapper">
+        <section class="tooltip-part">
+          {{this.formula}}
+        </section>
+      </div>
+    </div>
+    <h4 class="dice-total{{#if this.overallClass}} {{this.overallClass}}{{/if}}">
+      <div class="dice">
+        <div class="dice-rolls">
+          {{#each this.dice}}
+          <span class="roll{{#if this.cssClass}} {{this.cssClass}}{{/if}}">
+            <span class="result">{{this.result}}</span>
+            <span class="roll-flex paren-total">
+              <span class="paren">(</span>
+              <span class="total">{{this.total}}</span>
+              <span class="paren">)</span>
+            </span>
+          </span>
+          {{/each}}
+          {{#if this.reason}}<div class="dice-reason">{{this.reason}}</div>{{/if}}
+        </div>
+      </div>
+    </h4>
+    {{/each}}
+  </div>
+</div>

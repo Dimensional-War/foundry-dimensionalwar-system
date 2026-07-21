@@ -167,7 +167,7 @@
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               v-model="entry.bonusFormula"
-              placeholder="Formula (e.g. 1d20 or 1s5)"
+              placeholder="Formula (e.g. 1s5, 1s5*2, 1s5*2c,3f)"
             />
           </div>
           <div class="w-16">

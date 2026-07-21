@@ -11,18 +11,20 @@ export class DwRollParser extends foundry.dice.RollParser {
     term: string,
     flavor: string | null
   ): StringParseNode {
-    // Check if the term matches skill notation (e.g., "1s5")
-    const skillNotationRegex = /^(\d*)s(\d+)([+\-*/]\d+)?$/i;
-    const match = term.match(skillNotationRegex);
+    // Match pure NsN skill notation only — do NOT include operator+bonus here.
+    // e.g. "1s5" or "1s5[flavor]" (Foundry may pass flavor as part of the string).
+    // Any "+30" bonus must remain as a separate NumericTerm handled by Foundry;
+    // if we captured it here it would be silently dropped by fromParseNode.
+    const skillNotationRegex = /^(\d*)s(\d+)(?:\[[^\]]*\])?$/i;
+    const match = term.replace(/\[[^\]]*\]/g, "").match(skillNotationRegex);
     if (match) {
       const number = match[1] ? parseInt(match[1]) : 1; // Default to 1 die if not specified
       const skillLevel = parseInt(match[2]);
-      const modifier = match[3] ? match[3] : "";
 
       return {
         class: "DwSkillDiceTerm",
         formula: term,
-        modifiers: modifier,
+        modifiers: "",
         number,
         faces: skillLevel, // Pass skill level as faces so fromParseNode can extract it
         evaluated: false,
@@ -81,15 +83,8 @@ export class DwRollParser extends foundry.dice.RollParser {
       };
     }
 
-    // Default to standard DiceTerm
-    return {
-      class: "DiceTerm",
-      formula,
-      modifiers: sanitisedModifiers,
-      number,
-      faces,
-      evaluated: false,
-      options: { flavour: flavor }
-    };
+    // Default: delegate to parent so it returns the correct Foundry-native class
+    // name ("Die", not "DiceTerm") and options format.
+    return super._onDiceTerm(number, faces, modifiers, flavor, formula);
   }
 }

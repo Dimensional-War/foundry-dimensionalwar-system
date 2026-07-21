@@ -95,6 +95,9 @@ const initHandler = () => {
   // @ts-expect-error - Custom DiceTerm type registration
   CONFIG.Dice.termTypes.DwSkillDiceTerm = DwSkillDiceTerm;
 
+  // Load shared roll card template (used by kefka-sync module for dice display)
+  loadTemplates(["systems/dimensionalwar/templates/roll.hbs"]);
+
   // Register game settings
   // @ts-expect-error - Custom system namespace
   game.settings.register("dimensionalwar", "usePhysicalDiceFormulas", {

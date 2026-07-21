@@ -73,3 +73,69 @@ export function getPhysicalDiceFormula(dieSize: number): string {
       return `1d${dieSize}`;
   }
 }
+
+/**
+ * Result of parsing a crit/fail multiplier string from a roll formula.
+ * Matches the IRC `parseMults` syntax: *N, *Nc, *Nf, *Nc,Mf, *NcMf
+ */
+export interface ParseMultsResult {
+  /** Formula with the *N[c/f] modifier stripped */
+  cleanFormula: string;
+  critMult: number;
+  failMult: number;
+}
+
+/**
+ * Parse and strip an optional crit/fail range multiplier from a roll formula.
+ *
+ * Supported syntax (mirrors IRC's parseMults):
+ *   1s5*2      → critMult=2, failMult=2
+ *   1s5*2c     → critMult=2, failMult=1
+ *   1s5*2f     → critMult=1, failMult=2
+ *   1s5*2c,3f  → critMult=2, failMult=3
+ *   1s5*2c3f   → critMult=2, failMult=3  (compact, no comma)
+ */
+export function parseMults(formula: string): ParseMultsResult {
+  const multsRegex = /\*(\d[\d,cf]*)/i;
+  const match = formula.match(multsRegex);
+  if (!match) return { cleanFormula: formula, critMult: 1, failMult: 1 };
+
+  const cleanFormula = formula.replace(multsRegex, "").trim();
+  const content = match[1];
+
+  let critMult = 1;
+  let failMult = 1;
+
+  // Compact format: "2c3f" or "2f3c"
+  const compact = content.match(/^(\d+)([cf])(\d+)([cf])$/i);
+  if (compact) {
+    const aVal = parseInt(compact[1]);
+    const aSide = compact[2].toLowerCase();
+    const bVal = parseInt(compact[3]);
+    const bSide = compact[4].toLowerCase();
+    if (aSide !== bSide) {
+      if (aSide === "c") critMult = aVal;
+      else failMult = aVal;
+      if (bSide === "c") critMult = bVal;
+      else failMult = bVal;
+    }
+    return { cleanFormula, critMult, failMult };
+  }
+
+  // Comma-separated or single tag: "2", "2c", "3f", "2c,3f"
+  const parts = content.split(",");
+  for (const part of parts) {
+    const p = part.match(/^(\d+)([cf]?)$/i);
+    if (!p) continue;
+    const val = parseInt(p[1]);
+    const side = p[2].toLowerCase();
+    if (side === "c") critMult = val;
+    else if (side === "f") failMult = val;
+    else {
+      critMult = val;
+      failMult = val;
+    }
+  }
+
+  return { cleanFormula, critMult, failMult };
+}

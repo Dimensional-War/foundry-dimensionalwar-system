@@ -1,4 +1,5 @@
 import { DwSkillDiceTerm } from "./DwSkillDiceTerm";
+import { parseMults } from "./dice-utils";
 
 /**
  * Custom Roll class for Dimensional War
@@ -7,6 +8,55 @@ import { DwSkillDiceTerm } from "./DwSkillDiceTerm";
  * Without this, Foundry creates StringTerms for "1s0" notation instead of DwSkillDiceTerms.
  */
 export class DwRoll extends foundry.dice.Roll {
+  /**
+   * Preprocess the formula to extract *N[c/f] crit/fail range multipliers before
+   * Foundry's parser sees the `*` as arithmetic multiplication.
+   * Multipliers are stored in options so they survive serialization into ChatMessage.
+   *
+   * Syntax examples:  1s5*2   1s5*2c   1s5*2f   1s5*2c,3f   1s5*2c3f
+   */
+  constructor(
+    formula: string,
+    data?: object,
+    options?: foundry.dice.Roll.Options
+  ) {
+    const { cleanFormula, critMult, failMult } = parseMults(formula);
+
+    // Normalize: when a [flavor] bracket follows a numeric bonus on a skill die,
+    // Foundry's tokenizer sees the whole "1s20+30" as one undivided string expression
+    // (with the flavor as its annotation) and passes it to _onStringTerm, where the
+    // "+30" cannot be represented as a separate NumericTerm.
+    //
+    // Fix: move the [flavor] to sit immediately after the skill die notation so that
+    // the tokenizer can correctly split the bonus into its own OperatorTerm+NumericTerm.
+    //   Before: 1s20+30[first attack]   After: 1s20[first attack]+30
+    const normalizedFormula = cleanFormula.replace(
+      /(\d*s\d+)([+\-]\d+)(\[[^\]]*\])/g,
+      "$1$3$2"
+    );
+
+    const enrichedOptions: Record<string, unknown> = {
+      critMult: 1,
+      failMult: 1,
+      ...options
+    };
+    if (critMult !== 1 || failMult !== 1) {
+      enrichedOptions.critMult = critMult;
+      enrichedOptions.failMult = failMult;
+      enrichedOptions.originalFormula = formula;
+    }
+    // Preserve the original formula (with flavors in their original positions) so
+    // the IRC echo can reconstruct per-die flavor labels from the raw user input.
+    if (
+      normalizedFormula !== cleanFormula &&
+      !enrichedOptions.originalFormula
+    ) {
+      enrichedOptions.originalFormula = formula;
+    }
+    // @ts-expect-error - enrichedOptions extends Roll.Options
+    super(normalizedFormula, data, enrichedOptions);
+  }
+
   /**
    * Override evaluate to strip bonuses from s0 rolls BEFORE evaluation
    * Per system rules: skill level 0 gets no bonus
@@ -76,10 +126,13 @@ export class DwRoll extends foundry.dice.Roll {
       if (node?.class === "DwSkillDiceTerm") {
         return DwSkillDiceTerm.fromParseNode(node);
       }
-      // Default handling for other terms
+      // Default handling for other terms.
+      // "DiceTerm" is the abstract base; Foundry v13 uses "Die" as the concrete class.
+      // Alias it so compound formulas with standard dice (e.g. 1d3) still work.
+      const className = node?.class === "DiceTerm" ? "Die" : node?.class;
       const cls =
         // @ts-expect-error
-        foundry.dice.terms[node?.class] ?? foundry.dice.terms.RollTerm;
+        foundry.dice.terms[className] ?? foundry.dice.terms.RollTerm;
       return cls.fromParseNode(node);
     });
   }
