@@ -18,20 +18,24 @@ The importer accepts any of these:
 
 Examples:
 
-````json
+```json
 {
   "actors": [
-    { "name": "Goblin", "type": "npc" },
-    { "name": "Ogre", "type": "monster" }
-[
-  { "name": "Bandit", "type": "npc" },
-  { "name": "Wyrm", "type": "enemy" }
+      { "name": "Goblin", "type": "npc" },
+      { "name": "Ogre", "type": "monster" }
+      { "name": "Bandit", "type": "npc" },
+      { "name": "Wyrm", "type": "enemy" }
+   ]
+}
+```
 
 ## Supported entry wrappers
 
 Each entry can be either direct actor data or wrapped in one of these keys:
 
+
 - `npc`
+   ```json
       "bonuses": {
         "senses": {
           "sight": 7,
@@ -41,6 +45,7 @@ Each entry can be either direct actor data or wrapped in one of these keys:
           "touch": 0
         }
       },
+   ```
 
 Example:
 
