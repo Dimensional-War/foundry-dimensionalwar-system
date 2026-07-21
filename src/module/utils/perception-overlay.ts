@@ -103,7 +103,9 @@ export function initPerceptionHoverListener(): void {
  * | blindroll   | true          | [gmId]                   | GM only                   |
  * | selfroll    | false         | [rollerId]               | Roller only               |
  */
-export function isMessageVisibleToCurrentUser(message: any): boolean {
+export function isMessageVisibleToCurrentUser(
+  message: foundry.documents.ChatMessage
+): boolean {
   const user = (game as any).user;
   if (!user) return false;
 
@@ -114,7 +116,7 @@ export function isMessageVisibleToCurrentUser(message: any): boolean {
 
   // Whispered rolls (gmroll / selfroll / explicit whisper):
   // show only to recipients (Foundry always includes the GM in whisper arrays)
-  const whisper: string[] = message.whisper ?? [];
+  const whisper: string[] = (message.whisper as string[]) ?? [];
   if (whisper.length > 0) {
     return user.isGM || whisper.includes(user.id);
   }
