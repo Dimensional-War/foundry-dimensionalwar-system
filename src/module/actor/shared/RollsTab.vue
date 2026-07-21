@@ -344,7 +344,7 @@ async function rollMovement(type: string, speed: number) {
     await roll.evaluate();
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: actor as any }),
-      flavor: `${type} Movement (${speed} ft) - ${skillName} Level ${skill.level}${skill.bonus !== 0 ? ` ${skill.bonus >= 0 ? "+" : ""}${skill.bonus}` : ""}`
+      flavor: `${skillName}${skill.bonus !== 0 ? ` ${skill.bonus >= 0 ? "+" : ""}${skill.bonus}` : ""}`
     });
   } catch (e) {
     ui.notifications?.error(`Failed to roll movement: ${e}`);

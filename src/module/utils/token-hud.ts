@@ -132,10 +132,7 @@ export async function rollPerceptionCheck(
     const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
 
     // Build bonus details string for display
-    const bonusDetails =
-      senseLevel === 0
-        ? ""
-        : `(Awareness +${awareness}, Sense Bonus +${senseBonus})`;
+    const bonusDetails = "";
 
     // Build formula using skill notation
     const effectiveBonus = senseLevel === 0 ? 0 : totalBonus;
