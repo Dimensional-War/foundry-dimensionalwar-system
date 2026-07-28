@@ -438,6 +438,7 @@ const actorSchema = () => ({
   ),
   movementFlags: new SchemaField({
     hasFlight: new BooleanField({ required: true, initial: false }),
+    hasImprovedFlight: new BooleanField({ required: true, initial: false }),
     hasParkour: new BooleanField({ required: true, initial: false }),
     hasTeleport: new BooleanField({ required: true, initial: false }),
     hasCrossCountry: new BooleanField({ required: true, initial: false }),

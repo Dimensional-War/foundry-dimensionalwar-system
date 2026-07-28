@@ -2,7 +2,7 @@ import { markRaw } from "vue";
 import { ActorType } from "./enums";
 
 export class SystemActor<
-  SubType extends Actor.SubType = Actor.SubType
+  SubType extends Actor.SubType = ActorType
 > extends Actor<SubType> {
   constructor(
     data: ConstructorParameters<typeof Actor>[0],
@@ -156,7 +156,17 @@ export class SystemActor<
   get flyingSpeed(): number {
     const speeds = (this.system as any)?.speeds;
     if (speeds?.flying !== undefined) return speeds.flying;
-    return this.walkingSpeed;
+    if ((this as SystemActor<ActorType>).system?.movementFlags?.hasFlight) {
+      if (
+        (this as SystemActor<ActorType>).system?.movementFlags
+          ?.hasImprovedFlight
+      ) {
+        return this.walkingSpeed * 5;
+      } else {
+        return this.walkingSpeed * 2;
+      }
+    }
+    return 0;
   }
   set flyingSpeed(value: number) {
     (this.system as any).speeds.flying = value;

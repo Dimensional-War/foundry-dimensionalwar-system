@@ -168,7 +168,7 @@
       <fieldset class="border p-2 mb-3">
         <legend class="font-bold">Movement</legend>
         <div class="flex gap-2 flex-wrap">
-          <div class="basis-1/6">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Athletics Level</label>
             <input
               type="number"
@@ -178,7 +178,7 @@
               max="10"
             />
           </div>
-          <div class="basis-1/6">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Athletics Bonus</label>
             <input
               type="number"
@@ -186,7 +186,7 @@
               v-model.number="athleticsBonus"
             />
           </div>
-          <div class="basis-1/6">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Acrobatics Level</label>
             <input
               type="number"
@@ -196,7 +196,7 @@
               max="10"
             />
           </div>
-          <div class="basis-1/6">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Acrobatics Bonus</label>
             <input
               type="number"
@@ -204,7 +204,9 @@
               v-model.number="acrobaticsBonus"
             />
           </div>
-          <div class="basis-1/6">
+        </div>
+        <div class="flex gap-2 flex-wrap mt-2">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Swimming Level</label>
             <input
               type="number"
@@ -214,7 +216,7 @@
               max="10"
             />
           </div>
-          <div class="basis-1/6">
+          <div class="basis-1/5">
             <label class="block mb-1 font-medium">Swimming Bonus</label>
             <input
               type="number"
@@ -222,9 +224,19 @@
               v-model.number="swimmingBonus"
             />
           </div>
+          <div class="basis-1/5">
+            <label class="block mb-1 font-medium">Burrowing Level</label>
+            <input
+              type="number"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="burrowing"
+              min="0"
+              max="10"
+            />
+          </div>
         </div>
         <div class="flex gap-2 mt-2">
-          <div class="basis-1/4">
+          <div class="basis-1/5">
             <div class="flex items-center">
               <input
                 type="checkbox"
@@ -235,7 +247,18 @@
               <label class="ml-2" for="hasFlight">Has Flight</label>
             </div>
           </div>
-          <div class="basis-1/4">
+          <div class="basis-1/5">
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                class="mr-2"
+                id="hasImprovedFlight"
+                v-model="hasImprovedFlight"
+              />
+              <label class="ml-2" for="hasImprovedFlight">Has Improved Flight</label>
+            </div>
+          </div>
+          <div class="basis-1/5">
             <div class="flex items-center">
               <input
                 type="checkbox"
@@ -246,7 +269,7 @@
               <label class="ml-2" for="hasParkour">Has Parkour</label>
             </div>
           </div>
-          <div class="basis-1/4">
+          <div class="basis-1/5">
             <div class="flex items-center">
               <input
                 type="checkbox"
@@ -257,7 +280,7 @@
               <label class="ml-2" for="hasTeleport">Has Teleport</label>
             </div>
           </div>
-          <div class="basis-1/4">
+          <div class="basis-1/5">
             <div class="flex items-center">
               <input
                 type="checkbox"
@@ -488,6 +511,11 @@ const hasFlight = computed({
   set: (value: boolean) => setSkillFlag("hasFlight", value)
 });
 
+const hasImprovedFlight = computed({
+  get: () => getSkillFlag("hasImprovedFlight"),
+  set: (value: boolean) => setSkillFlag("hasImprovedFlight", value)
+});
+
 const hasParkour = computed({
   get: () => getSkillFlag("hasParkour"),
   set: (value: boolean) => setSkillFlag("hasParkour", value)
@@ -501,6 +529,11 @@ const hasTeleport = computed({
 const hasCrossCountry = computed({
   get: () => getSkillFlag("hasCrossCountry"),
   set: (value: boolean) => setSkillFlag("hasCrossCountry", value)
+});
+
+const burrowing = computed({
+  get: () => system.movementFlags?.burrowing ?? 0,
+  set: (value: number) => (system.movementFlags as Record<string, unknown>).burrowing = value
 });
 
 const perceptionLevel = computed({

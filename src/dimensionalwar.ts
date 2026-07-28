@@ -51,7 +51,7 @@ const initHandler = () => {
     [ActorType.Ally]: AllyDataModel,
     [ActorType.Enemy]: EnemyDataModel,
     [ActorType.Boss]: BossDataModel
-  } as unknown as typeof CONFIG.Actor.dataModels;
+  };
 
   // Register actor sheets
   foundry.documents.collections.Actors.unregisterSheet(
@@ -495,7 +495,6 @@ Hooks.once("ready", () => {
     // Check if this token has cross-country running
     const actor = token?.actor as SystemActor | undefined;
     const hasCrossCountry =
-      // @ts-expect-error - movementFlags not in base type definition
       actor?.system?.movementFlags?.hasCrossCountry || false;
 
     if (hasCrossCountry) {

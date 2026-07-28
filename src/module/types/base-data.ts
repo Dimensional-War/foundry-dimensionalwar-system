@@ -105,6 +105,7 @@ export declare namespace BaseData {
     }[];
     movementFlags: {
       hasFlight: boolean;
+      hasImprovedFlight: boolean;
       hasParkour: boolean;
       hasTeleport: boolean;
       hasCrossCountry: boolean;

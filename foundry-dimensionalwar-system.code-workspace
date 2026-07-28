@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "../../modules/foundry-area-measurement-overlay"
+		},
+		{
+			"path": "C:/Users/Brendan/AppData/Local/FoundryVTT/Data/modules/drag-ruler-modern"
 		}
 	],
 	"settings": {}
