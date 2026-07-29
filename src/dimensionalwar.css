@@ -550,6 +550,11 @@
         --total-color: var(--color-map-10);
     }
 
+    .dice-roll .roll.discarded {
+        text-decoration: line-through;
+        opacity: 0.5;
+    }
+
     .dice-total .dice-rolls .paren {
         color: var(--paren-color, var(--color-map-14));
     }

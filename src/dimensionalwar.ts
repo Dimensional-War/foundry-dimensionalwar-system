@@ -371,7 +371,7 @@ Hooks.on("renderChatMessageHTML", (_message: any, html: HTMLElement) => {
   }
 
   // Add result category colors to individual die results
-  const diceRolls = html.querySelectorAll(".dice-rolls li.roll");
+  const diceRolls = html.querySelectorAll(".dice-rolls .roll");
   if (diceRolls.length && skillTerm.results) {
     diceRolls.forEach((element, index) => {
       const result = skillTerm.results[index];

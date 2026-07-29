@@ -195,7 +195,7 @@
             <button
               type="button"
               class="block px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-              @click="doRoll(idx)"
+              @click="doRoll(actor, system, idx)"
               :title="'Roll'"
             >
               🎲
@@ -244,33 +244,8 @@
 import { inject, computed } from "vue";
 import { rollPerceptionCheck } from "../../utils/token-hud";
 import type { SystemActor as SystemActorType } from "../../documents";
-
-type RollEntry = {
-  category: string;
-  bonusFormula: string;
-  bonusNumber: number;
-  mpCost: number;
-  reasonBase: string;
-};
-
-type DwSystem = {
-  rolls: RollEntry[];
-  skills?: {
-    movement?: Record<string, any>;
-    senses?: Record<string, any>;
-    utility?: Record<string, any>;
-  };
-  bonuses?: {
-    senses?: Record<string, number>;
-  };
-  movementFlags?: {
-    hasFlight: boolean;
-    hasParkour: boolean;
-    hasTeleport: boolean;
-    hasCrossCountry: boolean;
-    burrowing: number;
-  };
-};
+import type { BaseData } from "../../types/base-data";
+import { doRoll } from "../../rolling/dice-utils";
 
 type SystemActor = SystemActorType & {
   walkingSpeed: number;
@@ -280,7 +255,7 @@ type SystemActor = SystemActorType & {
   burrowingSpeed: number;
 };
 
-const system = inject<DwSystem>("reactiveSystem")!;
+const system = inject<BaseData.DwSystem>("reactiveSystem")!;
 const actor = inject<SystemActor>("actor")!;
 
 // Check if actor has skills (CharacterDataModel-based actors only)
@@ -357,7 +332,7 @@ async function rollMovement(type: string, speed: number) {
       : `1s${skill.level}`;
 
   try {
-    const roll = await Roll.create(formula);
+    const roll = Roll.create(formula);
     await roll.evaluate();
     await roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: actor as any }),
@@ -369,7 +344,7 @@ async function rollMovement(type: string, speed: number) {
 }
 
 function addRoll() {
-  const newRoll: RollEntry = {
+  const newRoll: BaseData.RollEntry = {
     category: "Offensive",
     bonusFormula: "",
     bonusNumber: 0,
@@ -389,39 +364,5 @@ async function removeRoll(idx: number) {
 
   if (!confirmed) return;
   system.rolls.splice(idx, 1);
-}
-
-async function doRoll(idx: number) {
-  const entry = system.rolls[idx];
-  if (!entry) return;
-  const formulaBase = entry.bonusFormula?.trim() || "1d20";
-  const formula = entry.bonusNumber
-    ? `${formulaBase} + ${entry.bonusNumber}`
-    : formulaBase;
-  try {
-    if (entry.mpCost > 0) {
-      // @ts-expect-error - SystemActor has resources.mp.value
-      if (system.resources.mp.value < entry.mpCost) {
-        ui.notifications?.warn(`Not enough MP to perform this roll.`);
-        return;
-      }
-      // @ts-expect-error - SystemActor has resources.mp.value
-      system.resources.mp.value -= entry.mpCost;
-    }
-  } catch (e) {
-    ui.notifications?.error(`Failed to deduct MP: ${e}`);
-  }
-  try {
-    const roll = Roll.create(formula);
-    await roll.evaluate();
-    await roll.toMessage({
-      speaker: ChatMessage.getSpeaker({ actor: actor as any }),
-      flavor: entry.reasonBase
-        ? `${entry.reasonBase} (${entry.category})`
-        : entry.category
-    });
-  } catch (e) {
-    ui.notifications?.error(`Invalid roll formula: ${formula}`);
-  }
 }
 </script>

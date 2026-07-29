@@ -15,16 +15,18 @@ export class DwRollParser extends foundry.dice.RollParser {
     // e.g. "1s5" or "1s5[flavor]" (Foundry may pass flavor as part of the string).
     // Any "+30" bonus must remain as a separate NumericTerm handled by Foundry;
     // if we captured it here it would be silently dropped by fromParseNode.
-    const skillNotationRegex = /^(\d*)s(\d+)(?:\[[^\]]*\])?$/i;
+    // Now allow an optional trailing modifier chunk (kh1, kl, k, dl2, etc.)
+    const skillNotationRegex = /^(\d*)s(\d+)((?:[a-z]+\d*)*)$/i;
     const match = term.replace(/\[[^\]]*\]/g, "").match(skillNotationRegex);
     if (match) {
       const number = match[1] ? parseInt(match[1]) : 1; // Default to 1 die if not specified
       const skillLevel = parseInt(match[2]);
+      const modifiers = match[3] || ""; // Capture any trailing modifiers (kh1, kl, k, dl2, etc.
 
       return {
         class: "DwSkillDiceTerm",
         formula: term,
-        modifiers: "",
+        modifiers,
         number,
         faces: skillLevel, // Pass skill level as faces so fromParseNode can extract it
         evaluated: false,

@@ -20,6 +20,15 @@
 		},
 		{
 			"path": "C:/Users/Brendan/AppData/Local/FoundryVTT/Data/modules/drag-ruler-modern"
+		},
+		{
+			"path": "../../modules/foundry-kefka-sync-module"
+		},
+		{
+			"path": "C:/Users/Brendan/AppData/Roaming/mIRC/scripts/Kefka_scripts"
+		},
+		{
+			"path": "C:/Users/Brendan/AppData/Roaming/mIRC/scripts/DW_Foundry_Client"
 		}
 	],
 	"settings": {}

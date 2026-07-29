@@ -5,6 +5,9 @@
  * for achieving true uniform distribution using only Dice So Nice supported dice.
  */
 
+import { SystemActor } from "../documents";
+import { BaseData } from "../types/base-data";
+
 /**
  * Get the die size for a given skill level according to Dimensional War rules
  * Level 0: 1d40 (no bonus allowed)
@@ -138,4 +141,45 @@ export function parseMults(formula: string): ParseMultsResult {
   }
 
   return { cleanFormula, critMult, failMult };
+}
+
+export async function doRoll(
+  actor: SystemActor,
+  system: BaseData.DwSystem,
+  idx: number
+) {
+  const entry = system.rolls[idx];
+  if (!entry) return;
+  const formulaBase = entry.bonusFormula?.trim() || "1d20";
+  const formula = entry.bonusNumber
+    ? `${formulaBase} + ${entry.bonusNumber}`
+    : formulaBase;
+  try {
+    if (entry.mpCost > 0) {
+      if (system.resources.mp.value < entry.mpCost) {
+        ui.notifications?.warn(`Not enough MP to perform this roll.`);
+        return;
+      }
+      system.resources.mp.value -= entry.mpCost;
+    }
+  } catch (e) {
+    ui.notifications?.error(`Failed to deduct MP: ${e}`);
+  }
+  try {
+    const targets =
+      (game.user.targets.size > 0 ? " -» " : "") +
+      Array.from(game.user.targets)
+        .map(t => t.name)
+        .join(", ");
+    const roll = Roll.create(formula);
+    await roll.evaluate();
+    await roll.toMessage({
+      speaker: ChatMessage.getSpeaker({ actor: actor as any }),
+      flavor: entry.reasonBase
+        ? `${entry.reasonBase} (${entry.category})${targets}`
+        : entry.category + targets
+    });
+  } catch (e) {
+    ui.notifications?.error(`Invalid roll formula: ${formula}`);
+  }
 }

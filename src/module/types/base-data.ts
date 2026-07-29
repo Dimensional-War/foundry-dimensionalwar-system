@@ -122,6 +122,7 @@ export declare namespace BaseData {
         | "Artisan";
       bonusFormula: string;
       bonusNumber: number;
+      mpCost: number;
       reasonBase: string;
     }[];
     skills: {
@@ -226,4 +227,82 @@ export declare namespace BaseData {
   }
   interface enemy extends ActorUniversal {}
   interface boss extends ActorUniversal {}
+
+  type RollEntry = {
+    category: string;
+    bonusFormula: string;
+    bonusNumber: number;
+    mpCost: number;
+    reasonBase: string;
+  };
+
+  type DwSystem = {
+    rolls: RollEntry[];
+    resources: {
+      hp: { value: number; max: number; min: number };
+      mp: { value: number; max: number; min: number };
+    };
+    skills?: {
+      movement?: Record<string, any>;
+      senses?: Record<string, any>;
+      utility?: Record<string, any>;
+    };
+    bonuses?: {
+      senses?: Record<string, number>;
+    };
+    combat: {
+      emp: boolean;
+      defenseEffect: string;
+      braceType: string;
+      unsoakable: boolean;
+      damageType: string;
+      damage: string;
+    };
+    movementFlags?: {
+      hasFlight: boolean;
+      hasParkour: boolean;
+      hasTeleport: boolean;
+      hasCrossCountry: boolean;
+      burrowing: number;
+    };
+    soak: {
+      physicalBase: number;
+      magicalBase: number;
+      armoredPhysical: number;
+      armoredMagical: number;
+      shield: number;
+      shieldSoak: number;
+      shieldHitsLeft: number;
+      shieldHitsMax: number;
+      resolveOfAges?: boolean;
+    };
+    gauges: {
+      hasTrance: boolean;
+      trance: number;
+      hasLimitBreak: boolean;
+      limitBreak: number;
+      multiplier: number;
+    };
+    elements: {
+      element1Name: string;
+      element1Level: number;
+      element2Name: string;
+      element2Level: number;
+      selectedElement1Name: string;
+      selectedElement1Level: number;
+      selectedElement2Name: string;
+      selectedElement2Level: number;
+    };
+    armors?: {
+      name: string;
+      physicalSoak: number;
+      magicalSoak: number;
+      shieldSoak: number;
+      shield: number;
+      shieldHitsMax: number;
+      hasEmp: boolean;
+      equipped: boolean;
+    }[];
+    actionHistory: { name: string; changes: string }[];
+  };
 }

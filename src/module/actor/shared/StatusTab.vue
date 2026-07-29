@@ -1,407 +1,415 @@
 <template>
-  <div class="dw-status-tab">
-    <!-- ─── HP Row ─────────────────────────────────────────────── -->
-    <div class="flex gap-1 my-2">
-      <div class="basis-2/12 my-2 font-bold">HP:</div>
-      <div class="basis-5/12 ml-1">
-        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
-          <div
-            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all"
-            :class="hpPercent < 25
-              ? 'bg-red-600'
-              : hpPercent < 50
-                ? 'bg-yellow-500'
-                : 'bg-green-600'
-              "
-            :style="`width: ${hpPercent}%`"
-          >
-            <span
-              class="text-white text-xs font-semibold px-2 whitespace-nowrap"
-              :title="`${system.resources.hp.value}/${system.resources.hp.max} (${hpPercent}%)`"
+  <div class="dw-status-rolls-tab flex mx-2">
+    <div class="dw-status-tab">
+      <!-- ─── HP Row ─────────────────────────────────────────────── -->
+      <div class="flex gap-1 my-2">
+        <div class="basis-2/12 my-2 font-bold">HP:</div>
+        <div class="basis-5/12 ml-1">
+          <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center justify-center transition-all"
+              :class="hpPercent < 25
+                ? 'bg-red-600'
+                : hpPercent < 50
+                  ? 'bg-yellow-500'
+                  : 'bg-green-600'
+                "
+              :style="`width: ${hpPercent}%`"
             >
-              {{ system.resources.hp.value }}/{{ system.resources.hp.max }} ({{
-                hpPercent
-              }}%)
-            </span>
+              <span
+                class="text-white text-xs font-semibold px-2 whitespace-nowrap"
+                :title="`${system.resources.hp.value}/${system.resources.hp.max} (${hpPercent}%)`"
+              >
+                {{ system.resources.hp.value }}/{{ system.resources.hp.max }} ({{
+                  hpPercent
+                }}%)
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="basis-5/12">
-        <div class="flex gap-0">
-          <button
-            type="button"
-            class="grow px-3 py-1.5 border border-gray-600 cursor-pointer transition-colors first:rounded-l last:rounded-r -ml-px first:ml-0"
-            :class="system.combat.emp
-              ? 'bg-blue-600 text-white border-blue-600 z-10'
-              : ' text-gray-700 hover:bg-gray-50'
-              "
-            @click="save('combat.emp', !system.combat.emp)"
-          >
-            EMP
-          </button>
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
-            :title="currentDefenseEffect.label"
-            @click="cycleDefenseEffect"
-          >
-            <i :class="currentDefenseEffect.iconClass" aria-hidden="true" :title="currentDefenseEffect.label"></i>
-          </button>
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
-            :title="currentBraceType.label"
-            @click="cycleBraceType"
-          >
-            <i :class="currentBraceType.iconClass" aria-hidden="true" :title="currentBraceType.label"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── Soak Row ──────────────────────────────────────────── -->
-    <div class="flex flex-wrap items-center gap-1 mb-2">
-      <div class="basis-2/12 my-2 font-bold">Soak:</div>
-      <div class="flex-1 ml-1">
-        <span title="Physical Soak (base + armor + shield)"
-          ><span class="font-bold">P: </span>{{ system.soak.physicalBase }}({{
-            totalPhysical
-          }})</span
-        >
-        <span>, </span>
-        <span title="Magical Soak (base + armor + shield)"
-          ><span class="font-bold">M: </span>{{ system.soak.magicalBase }}({{
-            totalMagical
-          }})</span
-        >
-        <br v-if="currentShieldSoak > 0" />
-        <span
-          v-if="currentShieldSoak > 0"
-          title="Shield adds to soak for limited hits"
-          :class="{
-            'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
-            'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
-          }"
-          ><span class="font-bold">Shield: </span>+{{ currentShieldSoak }} ({{
-            system.soak.shieldHitsLeft
-          }}
-          hits)</span
-        >
-      </div>
-      <div class="flex-1">
-        <div class="flex gap-0">
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors"
-            :class="system.soak.shieldHitsLeft > 0
-              ? 'bg-blue-600 text-white border-blue-600 z-10'
-              : ' text-gray-700 hover:bg-gray-50'
-              "
-            @click="resetShield"
-            :title="'Reset shield hits to max'"
-          >
-            Shield ({{ system.soak.shieldHitsLeft }}/{{ maxShieldHits }})
-          </button>
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r cursor-pointer transition-colors -ml-px"
-            :class="system.combat.unsoakable
-              ? 'bg-blue-600 text-white border-blue-600 z-10'
-              : ' text-gray-700 hover:bg-gray-50'
-              "
-            @click="save('combat.unsoakable', !system.combat.unsoakable)"
-          >
-            Unsoakable
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── Damage Row ────────────────────────────────────────── -->
-    <div class="flex flex-wrap gap-1">
-      <div class="basis-1/3">
-        <select
-          v-model="system.combat.damageType"
-          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="0">Normal Damage</option>
-          <option value="1">Elemental Damage</option>
-        </select>
-      </div>
-      <div class="basis-1/4">
-        <input
-          type="text"
-          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          v-model="system.combat.damage"
-          :title="'Damage/Healing (1 or 1% or 1%c)'"
-          placeholder="Damage (1 or 1%)"
-          @keydown="onDamageInputKeydown"
-        />
-      </div>
-      <div class="flex-1">
-        <div class="flex gap-0">
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-            :title="'Physical'"
-            @click="dealDamage('physical')"
-          >
-            Physical
-          </button>
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
-            :title="'Magical'"
-            @click="dealDamage('magical')"
-          >
-            Magical
-          </button>
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
-            :title="'Heal'"
-            @click="dealHealing"
-          >
-            Heal
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="flex gap-1 mt-1">
-      <button
-        type="button"
-        class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-        @click="resetDamageState"
-      >
-        Reset State
-      </button>
-      <button
-        type="button"
-        class="flex-1 px-3 py-1.5 border border-yellow-500 rounded bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer transition-colors"
-        @click="undoLastAction"
-      >
-        Undo Last Action
-      </button>
-    </div>
-
-    <!-- ─── Elemental Row (visible when elemental damage) ─────── -->
-    <div
-      v-if="system.combat.damageType === '1'"
-      class="flex flex-wrap gap-1 my-2"
-    >
-      <div class="flex-1">
-        <div class="flex gap-1">
-          <select
-            v-model="system.elements.selectedElement1Name"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
-              {{ el.label }}
-            </option>
-          </select>
-          <select
-            v-model.number="system.elements.selectedElement1Level"
-            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option v-for="n in 6" :key="n - 1" :value="n - 1">
-              {{ n - 1 }}
-            </option>
-          </select>
-          <select
-            v-model="system.elements.selectedElement2Name"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
-              {{ el.label }}
-            </option>
-          </select>
-          <select
-            v-model.number="system.elements.selectedElement2Level"
-            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option v-for="n in 6" :key="n - 1" :value="n - 1">
-              {{ n - 1 }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── Trance Row ────────────────────────────────────────── -->
-    <div v-if="system.gauges.hasTrance" class="flex flex-wrap gap-1 mb-2">
-      <div class="basis-2/12 my-2 font-bold">Trance:</div>
-      <div class="basis-5/12 ml-1">
-        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
-          <div
-            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-500"
-            :style="`width: ${trancePct}%`"
-          >
-            <span class="inline-block mx-auto px-2"> {{ trancePct }}% </span>
-          </div>
-        </div>
-      </div>
-      <div class="flex-1">
-        <button
-          type="button"
-          class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
-          @click="activateTrance"
-        >
-          Activate
-        </button>
-      </div>
-    </div>
-
-    <!-- ─── Limit Break Row ───────────────────────────────────── -->
-    <div v-if="system.gauges.hasLimitBreak" class="flex flex-wrap gap-1 mb-2">
-      <div class="basis-2/12 my-2 font-bold">Limit Break:</div>
-      <div class="basis-5/12 ml-1">
-        <div
-          class="relative h-6 rounded overflow-hidden transition-colors"
-          :class="{
-            'bg-transparent': limitBreakFullBars === 0,
-            'bg-green-600': limitBreakFullBars === 1,
-            'bg-yellow-500': limitBreakFullBars === 2,
-            'bg-orange-500': limitBreakFullBars === 3,
-            'bg-red-500': limitBreakFullBars >= 4
-          }"
-        >
-          <!-- Current bar being filled (full width) -->
-          <div
-            v-if="limitBreakPct > 0 && limitBreakFullBars < 4"
-            class="absolute inset-y-0 left-0 transition-all"
-            :class="{
-              'bg-green-600': limitBreakFullBars === 0,
-              'bg-yellow-500': limitBreakFullBars === 1,
-              'bg-orange-500': limitBreakFullBars === 2,
-              'bg-red-500': limitBreakFullBars === 3
-            }"
-            :style="`width: ${limitBreakPct}%`"
-          ></div>
-
-          <!-- Text overlay -->
-          <div
-            class="absolute inset-0 flex items-center justify-center pointer-events-none"
-          >
-            <span
-              class="inline-block px-2 py-0.5 text-sm font-semibold text-white rounded"
+        <div class="basis-5/12">
+          <div class="flex gap-0">
+            <button
+              type="button"
+              class="grow px-3 py-1.5 border border-gray-600 cursor-pointer transition-colors first:rounded-l last:rounded-r -ml-px first:ml-0"
+              :class="system.combat.emp
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+                "
+              @click="save('combat.emp', !system.combat.emp)"
             >
-              Bars: {{ limitBreakFullBars }} / 4 ({{ limitBreakPct }}%)
-            </span>
+              EMP
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
+              :title="currentDefenseEffect.label"
+              @click="cycleDefenseEffect"
+            >
+              <i :class="currentDefenseEffect.iconClass" aria-hidden="true" :title="currentDefenseEffect.label"></i>
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 hover:bg-gray-50"
+              :title="currentBraceType.label"
+              @click="cycleBraceType"
+            >
+              <i :class="currentBraceType.iconClass" aria-hidden="true" :title="currentBraceType.label"></i>
+            </button>
           </div>
         </div>
       </div>
-      <div class="flex-1">
-        <div class="flex gap-1">
-          <input
-            type="number"
-            class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model.number="spendLbAmount"
-            min="0"
-            :max="limitBreakFullBars"
-            :title="'Number of full bars to spend (max: ' + limitBreakFullBars + ')'
-              "
-            placeholder="Bars"
-          />
-          <button
-            type="button"
-            class="flex-1 px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
-            @click="spendLimitBreak"
+      <!-- ─── Soak Row ──────────────────────────────────────────── -->
+      <div class="flex flex-wrap items-center gap-1 mb-2">
+        <div class="basis-2/12 my-2 font-bold">Soak:</div>
+        <div class="flex-1 ml-1">
+          <span title="Physical Soak (base + armor + shield)"
+            ><span class="font-bold">P: </span>{{ system.soak.physicalBase }}({{
+              totalPhysical
+            }})</span
           >
-            Spend
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── Gauge Multiplier Row ──────────────────────────────── -->
-    <div
-      v-if="system.gauges.hasTrance || system.gauges.hasLimitBreak"
-      class="flex flex-wrap gap-1 mb-2"
-    >
-      <div class="basis-2/12"></div>
-      <div class="basis-5/12">
-        <div class="flex gap-0">
+          <span>, </span>
+          <span title="Magical Soak (base + armor + shield)"
+            ><span class="font-bold">M: </span>{{ system.soak.magicalBase }}({{
+              totalMagical
+            }})</span
+          >
+          <br v-if="currentShieldSoak > 0" />
           <span
-            class="px-3 py-1.5 border border-gray-600 rounded-l bg-gray-100 text-gray-700"
-            title="times"
-            >×</span
+            v-if="currentShieldSoak > 0"
+            title="Shield adds to soak for limited hits"
+            :class="{
+              'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
+              'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
+            }"
+            ><span class="font-bold">Shield: </span>+{{ currentShieldSoak }} ({{
+              system.soak.shieldHitsLeft
+            }}
+            hits)</span
           >
-          <input
-            type="number"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
-            v-model.number="system.gauges.multiplier"
-            min="1"
-            :title="'Gauge Multiplier'"
-          />
+        </div>
+        <div class="flex-1">
+          <div class="flex gap-0">
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors"
+              :class="system.soak.shieldHitsLeft > 0
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+                "
+              @click="resetShield"
+              :title="'Reset shield hits to max'"
+            >
+              Shield ({{ system.soak.shieldHitsLeft }}/{{ maxShieldHits }})
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r cursor-pointer transition-colors -ml-px"
+              :class="system.combat.unsoakable
+                ? 'bg-blue-600 text-white border-blue-600 z-10'
+                : ' text-gray-700 hover:bg-gray-50'
+                "
+              @click="save('combat.unsoakable', !system.combat.unsoakable)"
+            >
+              Unsoakable
+            </button>
+          </div>
         </div>
       </div>
-      <div class="flex-1">
-        <div class="flex gap-1">
+      <!-- ─── Damage Row ────────────────────────────────────────── -->
+      <div class="flex flex-wrap gap-1">
+        <div class="basis-1/3">
+          <select
+            v-model="system.combat.damageType"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="0">Normal Damage</option>
+            <option value="1">Elemental Damage</option>
+          </select>
+        </div>
+        <div class="basis-1/4">
           <input
             type="text"
-            class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            v-model="gaugeMod"
-            placeholder="1 or +1/-1"
-            :title="'Modify Gauge to/by 1 or +1/-1'"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model="system.combat.damage"
+            :title="'Damage/Healing (1 or 1% or 1%c)'"
+            placeholder="Damage (1 or 1%)"
+            @keydown="onDamageInputKeydown"
           />
-          <button
-            type="button"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-            @click="modifyGauge"
-            :title="'Modify'"
-          >
-            Modify
-          </button>
         </div>
-      </div>
-    </div>
-
-    <!-- ─── MP Row ────────────────────────────────────────────── -->
-    <div class="flex flex-wrap gap-1 my-2">
-      <div class="basis-2/12 my-2 font-bold">MP:</div>
-      <div class="flex-1 ml-1">
-        <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
-          <div
-            class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-600"
-            :style="`width: ${mpPercent}%`"
-          >
-            <span
-              class="inline-block mx-auto px-2 text-white text-xs font-semibold"
-              :title="`${system.resources.mp.value}/${system.resources.mp.max} (${mpPercent}%)`"
+        <div class="flex-1">
+          <div class="flex gap-0">
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              :title="'Physical'"
+              @click="dealDamage('physical')"
             >
-              {{ system.resources.mp.value }}/{{ system.resources.mp.max }} ({{
-                mpPercent
-              }}%)
-            </span>
+              Physical
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
+              :title="'Magical'"
+              @click="dealDamage('magical')"
+            >
+              Magical
+            </button>
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors -ml-px"
+              :title="'Heal'"
+              @click="dealHealing"
+            >
+              Heal
+            </button>
           </div>
         </div>
       </div>
-      <div class="basis-1/6">
-        <input
-          type="text"
-          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          v-model="mpMod"
-          placeholder=""
-          :title="'MP modification amount'"
-        />
+      <div class="flex gap-1 mt-1">
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+          @click="resetDamageState"
+        >
+          Reset State
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-yellow-500 rounded bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer transition-colors"
+          @click="undoLastAction"
+        >
+          Undo Last Action
+        </button>
       </div>
-      <div class="w-auto">
-        <div class="flex gap-1">
+      <!-- ─── Elemental Row (visible when elemental damage) ─────── -->
+      <div
+        v-if="system.combat.damageType === '1'"
+        class="flex flex-wrap gap-1 my-2"
+      >
+        <div class="flex-1">
+          <div class="flex gap-1">
+            <select
+              v-model="system.elements.selectedElement1Name"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+                {{ el.label }}
+              </option>
+            </select>
+            <select
+              v-model.number="system.elements.selectedElement1Level"
+              class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option v-for="n in 6" :key="n - 1" :value="n - 1">
+                {{ n - 1 }}
+              </option>
+            </select>
+            <select
+              v-model="system.elements.selectedElement2Name"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+                {{ el.label }}
+              </option>
+            </select>
+            <select
+              v-model.number="system.elements.selectedElement2Level"
+              class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option v-for="n in 6" :key="n - 1" :value="n - 1">
+                {{ n - 1 }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- ─── Trance Row ────────────────────────────────────────── -->
+      <div v-if="system.gauges.hasTrance" class="flex flex-wrap gap-1 mb-2">
+        <div class="basis-2/12 my-2 font-bold">Trance:</div>
+        <div class="basis-5/12 ml-1">
+          <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-500"
+              :style="`width: ${trancePct}%`"
+            >
+              <span class="inline-block mx-auto px-2"> {{ trancePct }}% </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1">
           <button
             type="button"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-            @click="modifyMp(-1)"
+            class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+            @click="activateTrance"
           >
-            -
-          </button>
-          <button
-            type="button"
-            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-            @click="modifyMp(1)"
-          >
-            +
+            Activate
           </button>
         </div>
+      </div>
+      <!-- ─── Limit Break Row ───────────────────────────────────── -->
+      <div v-if="system.gauges.hasLimitBreak" class="flex flex-wrap gap-1 mb-2">
+        <div class="basis-2/12 my-2 font-bold">Limit Break:</div>
+        <div class="basis-5/12 ml-1">
+          <div
+            class="relative h-6 rounded overflow-hidden transition-colors"
+            :class="{
+              'bg-transparent': limitBreakFullBars === 0,
+              'bg-green-600': limitBreakFullBars === 1,
+              'bg-yellow-500': limitBreakFullBars === 2,
+              'bg-orange-500': limitBreakFullBars === 3,
+              'bg-red-500': limitBreakFullBars >= 4
+            }"
+          >
+            <!-- Current bar being filled (full width) -->
+            <div
+              v-if="limitBreakPct > 0 && limitBreakFullBars < 4"
+              class="absolute inset-y-0 left-0 transition-all"
+              :class="{
+                'bg-green-600': limitBreakFullBars === 0,
+                'bg-yellow-500': limitBreakFullBars === 1,
+                'bg-orange-500': limitBreakFullBars === 2,
+                'bg-red-500': limitBreakFullBars === 3
+              }"
+              :style="`width: ${limitBreakPct}%`"
+            ></div>
+            <!-- Text overlay -->
+            <div
+              class="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <span
+                class="inline-block px-2 py-0.5 text-sm font-semibold text-white rounded"
+              >
+                Bars: {{ limitBreakFullBars }} / 4 ({{ limitBreakPct }}%)
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1">
+          <div class="flex gap-1">
+            <input
+              type="number"
+              class="basis-20 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model.number="spendLbAmount"
+              min="0"
+              :max="limitBreakFullBars"
+              :title="'Number of full bars to spend (max: ' + limitBreakFullBars + ')'
+                "
+              placeholder="Bars"
+            />
+            <button
+              type="button"
+              class="flex-1 px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+              @click="spendLimitBreak"
+            >
+              Spend
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- ─── Gauge Multiplier Row ──────────────────────────────── -->
+      <div
+        v-if="system.gauges.hasTrance || system.gauges.hasLimitBreak"
+        class="flex flex-wrap gap-1 mb-2"
+      >
+        <div class="basis-2/12"></div>
+        <div class="basis-5/12">
+          <div class="flex gap-0">
+            <span
+              class="px-3 py-1.5 border border-gray-600 rounded-l bg-gray-100 text-gray-700"
+              title="times"
+              >×</span
+            >
+            <input
+              type="number"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-r text-gray-700 -ml-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10"
+              v-model.number="system.gauges.multiplier"
+              min="1"
+              :title="'Gauge Multiplier'"
+            />
+          </div>
+        </div>
+        <div class="flex-1">
+          <div class="flex gap-1">
+            <input
+              type="text"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              v-model="gaugeMod"
+              placeholder="1 or +1/-1"
+              :title="'Modify Gauge to/by 1 or +1/-1'"
+            />
+            <button
+              type="button"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              @click="modifyGauge"
+              :title="'Modify'"
+            >
+              Modify
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- ─── MP Row ────────────────────────────────────────────── -->
+      <div class="flex flex-wrap gap-1 my-2">
+        <div class="basis-2/12 my-2 font-bold">MP:</div>
+        <div class="flex-1 ml-1">
+          <div class="relative h-6 bg-gray-200 rounded overflow-hidden">
+            <div
+              class="absolute inset-y-0 left-0 flex items-center justify-center transition-all bg-blue-600"
+              :style="`width: ${mpPercent}%`"
+            >
+              <span
+                class="inline-block mx-auto px-2 text-white text-xs font-semibold"
+                :title="`${system.resources.mp.value}/${system.resources.mp.max} (${mpPercent}%)`"
+              >
+                {{ system.resources.mp.value }}/{{ system.resources.mp.max }} ({{
+                  mpPercent
+                }}%)
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="basis-1/6">
+          <input
+            type="text"
+            class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            v-model="mpMod"
+            placeholder=""
+            :title="'MP modification amount'"
+          />
+        </div>
+        <div class="w-auto">
+          <div class="flex gap-1">
+            <button
+              type="button"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              @click="modifyMp(-1)"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              @click="modifyMp(1)"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="basis-2/12 mt-2 ms-2 overflow-y-auto" style="max-height: 300px;">
+      <!-- display buttons for all the rolls stored in system.rolls -->
+      <div class="flex flex-col gap-2">
+          <button v-for="(roll, index) in system.rolls"
+            :key="index"
+            type="button"
+            class="px-3 h-auto w-full py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+            @click="doRoll(actor, system, index)"
+            :title="`(${roll.mpCost} mp)`"
+          >
+            {{ roll.reasonBase }}
+          </button>
       </div>
     </div>
   </div>
@@ -417,6 +425,8 @@ import {
   ELEMENTAL_RESISTANCE_MULT as elementalResistance
 } from "../../utils/elements";
 import { SystemActor } from "~/module/documents";
+import { doRoll } from "~/module/rolling/dice-utils";
+import { BaseData } from "~/module/types/base-data";
 
 const defenseEffectOptions = [
   { value: "no_effect", label: "No Defense Effect", iconClass: "fa-solid fa-ban" },
@@ -446,61 +456,7 @@ const currentBraceType = computed(
     ) ?? braceTypeOptions[0]
 );
 
-type DwSystem = {
-  resources: {
-    hp: { value: number; max: number; min: number };
-    mp: { value: number; max: number; min: number };
-  };
-  combat: {
-    emp: boolean;
-    defenseEffect: string;
-    braceType: string;
-    unsoakable: boolean;
-    damageType: string;
-    damage: string;
-  };
-  soak: {
-    physicalBase: number;
-    magicalBase: number;
-    armoredPhysical: number;
-    armoredMagical: number;
-    shield: number;
-    shieldSoak: number;
-    shieldHitsLeft: number;
-    shieldHitsMax: number;
-    resolveOfAges?: boolean;
-  };
-  gauges: {
-    hasTrance: boolean;
-    trance: number;
-    hasLimitBreak: boolean;
-    limitBreak: number;
-    multiplier: number;
-  };
-  elements: {
-    element1Name: string;
-    element1Level: number;
-    element2Name: string;
-    element2Level: number;
-    selectedElement1Name: string;
-    selectedElement1Level: number;
-    selectedElement2Name: string;
-    selectedElement2Level: number;
-  };
-  armors?: {
-    name: string;
-    physicalSoak: number;
-    magicalSoak: number;
-    shieldSoak: number;
-    shield: number;
-    shieldHitsMax: number;
-    hasEmp: boolean;
-    equipped: boolean;
-  }[];
-  actionHistory: { name: string; changes: string }[];
-};
-
-const system = inject<DwSystem>("reactiveSystem")!;
+const system = inject<BaseData.DwSystem>("reactiveSystem")!;
 const actor = inject<SystemActor>("actor")!;
 const sheet = inject<DwBaseSheet>("sheet")!;
 

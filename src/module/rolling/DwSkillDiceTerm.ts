@@ -59,7 +59,7 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
   } = {}): Promise<this> {
     // Check if physical dice formulas are enabled
     const usePhysicalFormulas = // @ts-expect-error - Custom system namespace
-    game.settings?.get("dimensionalwar", "usePhysicalDiceFormulas");
+      game.settings?.get("dimensionalwar", "usePhysicalDiceFormulas");
 
     // If disabled or setting not found, use default evaluation
     if (!usePhysicalFormulas) {
@@ -103,6 +103,14 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
       );
       // Wait for all animations to start (but they'll run in parallel)
       await Promise.all(promises);
+    }
+
+    // NEW: apply kh/kl/k/d (and any other registered modifiers) now that
+    // all "physical" sub-results are in this.results. This is the same
+    // mechanism stock Die.evaluate() calls internally — we just have to
+    // invoke it ourselves since we short-circuited super.evaluate().
+    if (this.modifiers.length) {
+      await this._evaluateModifiers();
     }
 
     this._evaluated = true;
@@ -160,8 +168,7 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
   getTooltipData(): any {
     const data = super.getTooltipData();
     if (typeof this.skillLevel === "number") {
-      // Replace the formula with the actual die size notation
-      data.formula = `${this.number}d${this.faces}`;
+      data.formula = `${this.number}d${this.faces}${this.modifiers.join("")}`;
     }
     return data;
   }

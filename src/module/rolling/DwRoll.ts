@@ -31,7 +31,7 @@ export class DwRoll extends foundry.dice.Roll {
     // the tokenizer can correctly split the bonus into its own OperatorTerm+NumericTerm.
     //   Before: 1s20+30[first attack]   After: 1s20[first attack]+30
     const normalizedFormula = cleanFormula.replace(
-      /(\d*s\d+)([+\-]\d+)(\[[^\]]*\])/g,
+      /(\d*s\d+(?:[a-z]+\d*)*)([+\-]\d+)(\[[^\]]*\])/g,
       "$1$3$2"
     );
 
