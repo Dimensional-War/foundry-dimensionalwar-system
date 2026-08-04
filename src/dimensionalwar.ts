@@ -3,6 +3,7 @@ import "./dimensionalwar.css";
 // System entry point – Foundry loads this as the ESModule for the system.
 import { SystemActor } from "./module/documents";
 import { ActorType } from "./module/enums";
+import { BaseData } from "./module/types/base-data";
 import {
   PcDataModel,
   NpcDataModel,
@@ -38,6 +39,8 @@ import type {
   ApplyDamageResult,
   DamageElement
 } from "./module/utils/apply-damage";
+import { showAggregateRollDialog } from "./module/utils/aggregate-rolls";
+import { initializeQuickRollHUD } from "./module/utils/quick-roll-hud";
 
 const initHandler = () => {
   CONFIG.debug.rollParsing = false; // Enable debug logging for roll parsing
@@ -136,7 +139,8 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
     super.DEFAULT_OPTIONS,
     {
       actions: {
-        perception: DwTokenHUD.#onSelectPerception
+        perception: DwTokenHUD.#onSelectPerception,
+        quickRolls: DwTokenHUD.#onQuickRolls
       }
     },
     { inplace: false }
@@ -210,8 +214,20 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
   async _prepareContext(options: any) {
     const context = await super._prepareContext(options);
     const perceptionSenses = this._getPerceptionChoices();
+
+    // Add quick rolls button info
+    const actor = this.document?.actor as SystemActor;
+    const rolls = (actor?.system as unknown as BaseData.DwSystem)?.rolls ?? [];
+    const hasQuickRolls = rolls.length > 0;
+
     return foundry.utils.mergeObject(context, {
-      perceptionSenses
+      perceptionSenses,
+      quickRolls: {
+        enabled: hasQuickRolls,
+        icon: "fa-dice-d20",
+        label: "Quick Rolls",
+        cssClass: "quick-rolls"
+      }
     });
   }
 
@@ -264,6 +280,31 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
       }
     }
   }
+
+  /**
+   * Handle quick rolls button click
+   * @param {PointerEvent} event
+   * @param {HTMLElement} target
+   * @returns {Promise<void>}
+   */
+  static async #onQuickRolls(
+    this: DwTokenHUD,
+    event: PointerEvent,
+    target: HTMLElement
+  ): Promise<void> {
+    const actor = this.document?.actor as SystemActor;
+    if (!actor) return;
+
+    const rolls = (actor.system as unknown as BaseData.DwSystem)?.rolls ?? [];
+    if (rolls.length === 0) {
+      ui.notifications?.warn("This token has no configured rolls");
+      return;
+    }
+
+    // Import the showQuickRollMenu function
+    const { showQuickRollMenu } = await import("./module/utils/quick-roll-hud");
+    await showQuickRollMenu(this.object as any, actor, rolls);
+  }
 }
 
 // ─── System Initialization ──────────────────────────────────────────────────────
@@ -304,6 +345,18 @@ Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
   perceptionBtn.dataset.tooltip = "Roll Perception Check";
   perceptionBtn.innerHTML = `<i class="fas fa-eye"></i>`;
   leftCol.appendChild(perceptionBtn);
+
+  // Add quick rolls button if actor has rolls configured
+  const quickRolls = data.quickRolls;
+  if (quickRolls?.enabled) {
+    const quickRollsBtn = document.createElement("button");
+    quickRollsBtn.type = "button";
+    quickRollsBtn.classList.add("control-icon", quickRolls.cssClass);
+    quickRollsBtn.dataset.action = "quickRolls";
+    quickRollsBtn.dataset.tooltip = quickRolls.label;
+    quickRollsBtn.innerHTML = `<i class="fas ${quickRolls.icon}"></i>`;
+    leftCol.appendChild(quickRollsBtn);
+  }
 
   // Create perception palette with proper structure
   const palette = document.createElement("div");
@@ -938,6 +991,10 @@ async function showDamageDialog(actor: SystemActor): Promise<void> {
 }
 
 Hooks.once("ready", () => {
+  // Initialize quick roll HUD extension
+  initializeQuickRollHUD();
+
+  // Expose utility functions to game global
   (game as any).dimensionalwar = {
     /** Open the damage dialog for a given actor, then apply the result. */
     showDamageDialog,
@@ -946,6 +1003,8 @@ Hooks.once("ready", () => {
     /** Calculate total effective soak for an actor system snapshot. */
     calcActorSoak,
     /** Directly apply damage to an actor without a dialog. */
-    applyDamageToActor
+    applyDamageToActor,
+    /** Show aggregate roll dialog for all selected tokens. */
+    showAggregateRolls: showAggregateRollDialog
   };
 });

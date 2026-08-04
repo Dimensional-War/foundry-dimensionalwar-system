@@ -146,7 +146,8 @@ export function parseMults(formula: string): ParseMultsResult {
 export async function doRoll(
   actor: SystemActor,
   system: BaseData.DwSystem,
-  idx: number
+  idx: number,
+  updateBaseActor = false
 ) {
   const entry = system.rolls[idx];
   if (!entry) return;
@@ -160,7 +161,15 @@ export async function doRoll(
         ui.notifications?.warn(`Not enough MP to perform this roll.`);
         return;
       }
-      system.resources.mp.value -= entry.mpCost;
+
+      if (updateBaseActor) {
+        // Update the base actor document (for use outside sheet context)
+        const newMP = system.resources.mp.value - entry.mpCost;
+        await actor.update({ "system.resources.mp.value": newMP } as any);
+      } else {
+        // Update reactive system (for use within sheet context)
+        system.resources.mp.value -= entry.mpCost;
+      }
     }
   } catch (e) {
     ui.notifications?.error(`Failed to deduct MP: ${e}`);
