@@ -326,6 +326,15 @@
         border-color: #27ae60;
     }
 
+    /* Overrides Foundry's fixed button height so multi-line roll labels can wrap */
+    .dw-roll-btn {
+        height: auto !important;
+        min-height: 0 !important;
+        line-height: 1.3 !important;
+        white-space: normal !important;
+        text-align: center;
+    }
+
     .dw-btn-danger {
         color: #c0392b;
     }

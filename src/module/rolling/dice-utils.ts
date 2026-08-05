@@ -143,18 +143,38 @@ export function parseMults(formula: string): ParseMultsResult {
   return { cleanFormula, critMult, failMult };
 }
 
+/**
+ * Apply a signed dice modifier to every die term (e.g. "1s5" or "1d20") in a formula,
+ * shifting the die size up or down. "1s5" with diceMod=-1 becomes "1s4";
+ * "1d20" with diceMod=-1 becomes "1d19".
+ */
+export function applyDiceModifier(formula: string, diceMod: number): string {
+  if (!diceMod) return formula;
+  return formula.replace(
+    /(\d+)([sd])(\d+)/gi,
+    (_match, diceCount, dieType, dieSize) => {
+      const newSize = Math.max(0, parseInt(dieSize, 10) + diceMod);
+      return `${diceCount}${dieType}${newSize}`;
+    }
+  );
+}
+
 export async function doRoll(
   actor: SystemActor,
   system: BaseData.DwSystem,
   idx: number,
-  updateBaseActor = false
+  updateBaseActor = false,
+  diceMod = 0,
+  bonusMod = 0
 ) {
   const entry = system.rolls[idx];
   if (!entry) return;
-  const formulaBase = entry.bonusFormula?.trim() || "1d20";
-  const formula = entry.bonusNumber
-    ? `${formulaBase} + ${entry.bonusNumber}`
-    : formulaBase;
+  const formulaBase = applyDiceModifier(
+    entry.bonusFormula?.trim() || "1d20",
+    diceMod
+  );
+  const totalBonus = (entry.bonusNumber || 0) + bonusMod;
+  const formula = totalBonus ? `${formulaBase} + ${totalBonus}` : formulaBase;
   try {
     if (entry.mpCost > 0) {
       if (system.resources.mp.value < entry.mpCost) {

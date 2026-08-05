@@ -1,6 +1,6 @@
 <template>
-  <div class="dw-status-rolls-tab flex mx-2 @container">
-    <div class="dw-status-tab flex-1">
+  <div class="dw-status-rolls-tab flex items-start mx-2 @container">
+    <div class="dw-status-tab flex-1" ref="statusColumnRef">
       <!-- ─── HP Row ─────────────────────────────────────────────── -->
       <div class="flex gap-1 my-2">
         <div class="basis-2/12 my-2 font-bold">HP:</div>
@@ -117,8 +117,8 @@
         </div>
       </div>
       <!-- ─── Damage Row ────────────────────────────────────────── -->
-      <div class="flex flex-wrap gap-1">
-        <div class="basis-1/3">
+      <div class="flex gap-1">
+        <div class="basis-4/12">
           <select
             v-model="system.combat.damageType"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -127,7 +127,7 @@
             <option value="1">Elemental Damage</option>
           </select>
         </div>
-        <div class="basis-1/4">
+        <div class="basis-3/12">
           <input
             type="text"
             class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -137,7 +137,7 @@
             @keydown="onDamageInputKeydown"
           />
         </div>
-        <div class="flex-1">
+        <div class="basis-5/12">
           <div class="flex gap-0">
             <button
               type="button"
@@ -180,6 +180,14 @@
           @click="undoLastAction"
         >
           Undo Last Action
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!redoStack.length"
+          @click="redoLastAction"
+        >
+          Redo Last Action
         </button>
       </div>
       <!-- ─── Elemental Row (visible when elemental damage) ─────── -->
@@ -398,14 +406,34 @@
         </div>
       </div>
     </div>
-    <div class="basis-2/12 @lg:basis-3/12 @xl:basis-4/12 @3xl:basis-5/12 mt-2 ms-2 overflow-y-auto" style="max-height: 300px;">
+    <div
+      class="basis-2/12 @lg:basis-3/12 @xl:basis-4/12 @3xl:basis-5/12 mt-2 ms-2 flex flex-col"
+      :style="rollsColumnMaxHeight ? `max-height: ${rollsColumnMaxHeight}px` : undefined"
+    >
+      <!-- ─── Dice/Bonus Modifiers ─────────────────────────────── -->
+      <div class="flex gap-1 mb-2">
+        <input
+          type="text"
+          class="px-2 py-1 border border-gray-600 rounded text-gray-700 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          v-model="diceMod"
+          placeholder="Dice Mod (+1/-1)"
+          :title="'Shifts the skill die level of rolled dice (e.g. -1 turns 1s2 into 1s1)'"
+        />
+        <input
+          type="text"
+          class="px-2 py-1 border border-gray-600 rounded text-gray-700 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          v-model="bonusMod"
+          placeholder="Bonus Mod (+1/-1)"
+          :title="'Adds to the flat bonus of any roll'"
+        />
+      </div>
       <!-- display buttons for all the rolls stored in system.rolls -->
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto">
           <button v-for="(roll, index) in system.rolls"
             :key="index"
             type="button"
-            class="px-3 h-auto w-full py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-            @click="doRoll(actor, system, index)"
+            class="dw-roll-btn px-3 w-full py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors shrink-0"
+            @click="onRollClick(index)"
             :title="`(${roll.mpCost} mp)`"
           >
             {{ roll.reasonBase }}
@@ -416,7 +444,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed, ref } from "vue";
+import { inject, computed, ref, onMounted, onUnmounted } from "vue";
 import type { DwBaseSheet } from "../DwBaseSheet";
 import {
   ELEMENT_CHOICES as elementChoices,
@@ -464,6 +492,42 @@ const sheet = inject<DwBaseSheet>("sheet")!;
 const mpMod = ref("");
 const gaugeMod = ref("");
 const spendLbAmount = ref(0);
+const diceMod = ref("");
+const bonusMod = ref("");
+// Redo history is session-only (not persisted); cleared whenever a new action is recorded
+const redoStack = ref<{ name: string; changes: Record<string, unknown> }[]>([]);
+
+// Tracks the rolls column's max-height against the available window space, so it
+// grows/shrinks with the sheet window; falls back to the left column's content
+// height only until the tab content area has been measured (first mount)
+const statusColumnRef = ref<HTMLElement | null>(null);
+const rollsColumnMaxHeight = ref(0);
+let statusColumnResizeObserver: ResizeObserver | null = null;
+
+// Bottom breathing room so the rolls column never forces the tab content to scroll
+const ROLLS_COLUMN_BOTTOM_MARGIN = 16;
+
+function recomputeRollsColumnMaxHeight() {
+  const leftHeight = statusColumnRef.value?.scrollHeight ?? 0;
+  const tabContentHeight =
+    statusColumnRef.value?.closest<HTMLElement>(".dw-tab-content")?.clientHeight ?? 0;
+  const availableHeight = tabContentHeight - ROLLS_COLUMN_BOTTOM_MARGIN;
+  rollsColumnMaxHeight.value = tabContentHeight > 0 ? availableHeight : leftHeight;
+}
+
+onMounted(() => {
+  if (!statusColumnRef.value) return;
+  statusColumnResizeObserver = new ResizeObserver(recomputeRollsColumnMaxHeight);
+  statusColumnResizeObserver.observe(statusColumnRef.value);
+  const tabContent = statusColumnRef.value.closest<HTMLElement>(".dw-tab-content");
+  if (tabContent) statusColumnResizeObserver.observe(tabContent);
+  recomputeRollsColumnMaxHeight();
+});
+
+onUnmounted(() => {
+  statusColumnResizeObserver?.disconnect();
+  statusColumnResizeObserver = null;
+});
 
 // ─── Computed ──────────────────────────────────────────────────────────────
 const hpPercent = computed(() => {
@@ -680,6 +744,27 @@ function pushHistory(name: string, changes: Record<string, unknown>) {
   if (history.length > 20) history.shift();
   system.actionHistory = history;
   sheet.saveSystem({ actionHistory: history });
+  // A fresh action invalidates whatever was available to redo
+  redoStack.value = [];
+}
+
+function getSystemValue(path: string): unknown {
+  const keys = path.split(".");
+  let obj: unknown = system;
+  for (const key of keys) {
+    if (obj == null) return undefined;
+    obj = (obj as Record<string, unknown>)[key];
+  }
+  return obj;
+}
+
+function setSystemValue(path: string, value: unknown) {
+  const keys = path.split(".");
+  let obj = system as Record<string, unknown>;
+  for (let i = 0; i < keys.length - 1; i++) {
+    obj = obj[keys[i]] as Record<string, unknown>;
+  }
+  obj[keys[keys.length - 1]] = value;
 }
 
 // ─── Actions ───────────────────────────────────────────────────────────────
@@ -847,20 +932,49 @@ async function undoLastAction() {
   if (!history.length) return;
   const last = history.pop()!;
   const changes: Record<string, unknown> = JSON.parse(last.changes ?? "{}");
+
+  // Capture the values being overwritten so redo can restore them
+  const redoChanges: Record<string, unknown> = {};
+  for (const path of Object.keys(changes)) {
+    redoChanges[path] = JSON.parse(JSON.stringify(getSystemValue(path) ?? null));
+  }
+  redoStack.value = [...redoStack.value, { name: last.name, changes: redoChanges }];
+
   system.actionHistory = history;
   const undoUpdates: Record<string, unknown> = {
     "system.actionHistory": history
   };
   for (const [path, oldVal] of Object.entries(changes)) {
     undoUpdates[`system.${path}`] = oldVal;
-    const sysKeys = path.split(".");
-    let sysObj = system as Record<string, unknown>;
-    for (let i = 0; i < sysKeys.length - 1; i++) {
-      sysObj = sysObj[sysKeys[i]] as Record<string, unknown>;
-    }
-    if (sysObj) sysObj[sysKeys[sysKeys.length - 1]] = oldVal;
+    setSystemValue(path, oldVal);
   }
   await (actor as any).update(undoUpdates);
+}
+
+async function redoLastAction() {
+  if (!redoStack.value.length) return;
+  const redoStackCopy = [...redoStack.value];
+  const last = redoStackCopy.pop()!;
+  redoStack.value = redoStackCopy;
+
+  // Capture the pre-redo values so this redo can be undone again
+  const undoChanges: Record<string, unknown> = {};
+  for (const path of Object.keys(last.changes)) {
+    undoChanges[path] = JSON.parse(JSON.stringify(getSystemValue(path) ?? null));
+  }
+  const history = [...(system.actionHistory ?? [])];
+  history.push({ name: last.name, changes: JSON.stringify(undoChanges) });
+  if (history.length > 20) history.shift();
+  system.actionHistory = history;
+
+  const redoUpdates: Record<string, unknown> = {
+    "system.actionHistory": history
+  };
+  for (const [path, newVal] of Object.entries(last.changes)) {
+    redoUpdates[`system.${path}`] = newVal;
+    setSystemValue(path, newVal);
+  }
+  await (actor as any).update(redoUpdates);
 }
 
 async function resetShield() {
@@ -965,5 +1079,23 @@ async function modifyMp(sign: 1 | -1) {
   const newVal = Math.min(max, Math.max(min, cur + delta));
   system.resources.mp.value = newVal;
   await sheet.saveSystem({ "resources.mp.value": newVal });
+}
+
+function parseSignedInt(raw: string): number {
+  const parsed = parseInt(raw.trim(), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function onRollClick(index: number) {
+  await doRoll(
+    actor,
+    system,
+    index,
+    false,
+    parseSignedInt(diceMod.value),
+    parseSignedInt(bonusMod.value)
+  );
+  diceMod.value = "";
+  bonusMod.value = "";
 }
 </script>

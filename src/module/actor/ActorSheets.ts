@@ -10,7 +10,7 @@ export class PcSheet extends DwBaseSheet {
   static DEFAULT_OPTIONS = {
     classes: ["dw-sheet", "actor-sheet", "pc"],
     window: { resizable: true },
-    position: { width: 660, height: 520 }
+    position: { width: 700, height: 601 }
   };
 }
 
@@ -22,7 +22,7 @@ export class NpcSheet extends DwBaseSheet {
   static DEFAULT_OPTIONS = {
     classes: ["dw-sheet", "actor-sheet", "npc"],
     window: { resizable: true },
-    position: { width: 660, height: 520 }
+    position: { width: 700, height: 601 }
   };
 }
 
@@ -34,7 +34,7 @@ export class AllySheet extends DwBaseSheet {
   static DEFAULT_OPTIONS = {
     classes: ["dw-sheet", "actor-sheet", "ally"],
     window: { resizable: true },
-    position: { width: 660, height: 520 }
+    position: { width: 700, height: 601 }
   };
 }
 
@@ -46,7 +46,7 @@ export class EnemySheet extends DwBaseSheet {
   static DEFAULT_OPTIONS = {
     classes: ["dw-sheet", "actor-sheet", "enemy"],
     window: { resizable: true },
-    position: { width: 660, height: 520 }
+    position: { width: 700, height: 601 }
   };
 }
 
@@ -58,6 +58,6 @@ export class BossSheet extends DwBaseSheet {
   static DEFAULT_OPTIONS = {
     classes: ["dw-sheet", "actor-sheet", "boss"],
     window: { resizable: true },
-    position: { width: 700, height: 560 }
+    position: { width: 700, height: 601 }
   };
 }
