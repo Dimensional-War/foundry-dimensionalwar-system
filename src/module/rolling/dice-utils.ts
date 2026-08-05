@@ -176,7 +176,7 @@ export async function doRoll(
   }
   try {
     const targets =
-      (game.user.targets.size > 0 ? " -» " : "") +
+      (game.user.targets.size > 0 ? " ➔ " : "") +
       Array.from(game.user.targets)
         .map(t => t.name)
         .join(", ");
