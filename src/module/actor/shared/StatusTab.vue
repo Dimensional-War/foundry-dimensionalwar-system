@@ -1,6 +1,6 @@
 <template>
-  <div class="dw-status-rolls-tab flex mx-2">
-    <div class="dw-status-tab">
+  <div class="dw-status-rolls-tab flex mx-2 @container">
+    <div class="dw-status-tab flex-1">
       <!-- ─── HP Row ─────────────────────────────────────────────── -->
       <div class="flex gap-1 my-2">
         <div class="basis-2/12 my-2 font-bold">HP:</div>
@@ -398,7 +398,7 @@
         </div>
       </div>
     </div>
-    <div class="basis-2/12 mt-2 ms-2 overflow-y-auto" style="max-height: 300px;">
+    <div class="basis-2/12 @lg:basis-3/12 @xl:basis-4/12 @3xl:basis-5/12 mt-2 ms-2 overflow-y-auto" style="max-height: 300px;">
       <!-- display buttons for all the rolls stored in system.rolls -->
       <div class="flex flex-col gap-2">
           <button v-for="(roll, index) in system.rolls"
