@@ -34,7 +34,7 @@ function getByPath(obj: any, path: string): unknown {
   return path.split(".").reduce((o, k) => o?.[k], obj);
 }
 
-/** Snapshot the current live values at STAT_PATHS into a flat dot-path object. */
+/** Snapshot the current live values at STAT_PATHS into a flat dot-path object (relative to `system`). */
 function snapshotStats(system: any): Record<string, unknown> {
   const snapshot: Record<string, unknown> = {};
   for (const path of STAT_PATHS) {
@@ -43,34 +43,88 @@ function snapshotStats(system: any): Record<string, unknown> {
   return snapshot;
 }
 
-/** Build a flat dot-path update replacing live values with a form entry's block. */
-function replaceUpdateFromForm(form: FormEntry): Record<string, unknown> {
+/** Flatten a form entry's stat block down to STAT_PATHS-relative dot paths (no `system.` prefix). */
+function flattenFormStats(form: FormEntry): Record<string, unknown> {
   const flatForm = foundry.utils.flattenObject({
     statistics: form.statistics,
     resources: form.resources,
     soak: form.soak,
     elements: form.elements
   });
+  const flat: Record<string, unknown> = {};
+  for (const path of STAT_PATHS) {
+    if (path in flatForm) flat[path] = flatForm[path];
+  }
+  return flat;
+}
+
+/** Preserve HP/MP percentage when max changes: same fraction remaining under the new max. */
+function scaleResourceValue(value: number, fromMax: number, toMax: number): number {
+  if (!fromMax) return value;
+  const ratio = value / fromMax;
+  return Math.max(0, Math.round(ratio * toMax));
+}
+
+/**
+ * Return a shallow copy of `system` with its MP value reduced by `cost` -
+ * used so the MP cost of transforming is deducted from the *current* form's
+ * MP before percentage scaling into the new form's max, rather than after.
+ */
+function withMpDeducted(system: any, cost: number): any {
+  if (!cost) return system;
+  const currentMp = Number(system.resources?.mp?.value) || 0;
+  return {
+    ...system,
+    resources: {
+      ...system.resources,
+      mp: { ...system.resources?.mp, value: Math.max(0, currentMp - cost) }
+    }
+  };
+}
+
+/**
+ * Build a fully `system.`-prefixed actor update from a target stat block
+ * (either a form's stats, replacing current values, or a restore snapshot),
+ * rescaling current HP/MP so the percentage remaining is preserved across
+ * the max change instead of carrying over the raw prior value.
+ */
+function buildStatUpdate(
+  system: any,
+  targetFlat: Record<string, unknown>
+): Record<string, unknown> {
   const update: Record<string, unknown> = {};
   for (const path of STAT_PATHS) {
-    if (path in flatForm) update[path] = flatForm[path];
+    if (path in targetFlat) update[`system.${path}`] = targetFlat[path];
   }
+
+  const oldHpMax = Number(system.resources?.hp?.max) || 0;
+  const oldHpValue = Number(system.resources?.hp?.value) || 0;
+  const newHpMax = Number(targetFlat["resources.hp.max"] ?? oldHpMax) || 0;
+  update["system.resources.hp.value"] = scaleResourceValue(
+    oldHpValue,
+    oldHpMax,
+    newHpMax
+  );
+
+  const oldMpMax = Number(system.resources?.mp?.max) || 0;
+  const oldMpValue = Number(system.resources?.mp?.value) || 0;
+  const newMpMax = Number(targetFlat["resources.mp.max"] ?? oldMpMax) || 0;
+  update["system.resources.mp.value"] = scaleResourceValue(
+    oldMpValue,
+    oldMpMax,
+    newMpMax
+  );
+
   return update;
 }
 
-/** Build a flat dot-path update adding a form entry's block on top of current live values. */
+/** Build a `system.`-prefixed update adding a form entry's block on top of current live values. */
 function addUpdateFromForm(system: any, form: FormEntry): Record<string, unknown> {
-  const flatForm = foundry.utils.flattenObject({
-    statistics: form.statistics,
-    resources: form.resources,
-    soak: form.soak
-  });
+  const flatForm = flattenFormStats(form);
   const update: Record<string, unknown> = {};
-  for (const path of Object.keys(flatForm)) {
-    if (!STAT_PATHS.includes(path as (typeof STAT_PATHS)[number])) continue;
+  for (const [path, bonus] of Object.entries(flatForm)) {
     const base = Number(getByPath(system, path)) || 0;
-    const bonus = Number(flatForm[path]) || 0;
-    update[path] = base + bonus;
+    update[`system.${path}`] = base + (Number(bonus) || 0);
   }
   return update;
 }
@@ -159,10 +213,13 @@ export async function activateTransformation(
     height: actor.prototypeToken.height
   };
 
+  const statUpdate = buildStatUpdate(
+    withMpDeducted(system, mpCost),
+    flattenFormStats(form)
+  );
+
   await actor.update({
-    ...replaceUpdateFromForm(form),
-    "system.resources.mp.value":
-      (Number(system.resources?.mp?.value) || 0) - mpCost,
+    ...statUpdate,
     "system.formState.activeTransformationId": formId,
     "system.formState.baseSnapshot": baseSnapshot,
     "system.formState.baseToken": baseToken
@@ -196,10 +253,10 @@ export async function deactivateTransformation(actor: SystemActor): Promise<void
     height?: number;
   };
 
+  const statUpdate = buildStatUpdate(withMpDeducted(system, mpCost), snapshot);
+
   await actor.update({
-    ...snapshot,
-    "system.resources.mp.value":
-      (Number(system.resources?.mp?.value) || 0) - mpCost,
+    ...statUpdate,
     "system.formState.activeTransformationId": "",
     "system.formState.baseSnapshot": {},
     "system.formState.baseToken": {}
@@ -258,8 +315,13 @@ export async function deactivateAlternateForm(actor: SystemActor): Promise<void>
       )
     : null;
 
+  const restoreUpdate: Record<string, unknown> = {};
+  for (const path of STAT_PATHS) {
+    if (path in snapshot) restoreUpdate[`system.${path}`] = snapshot[path];
+  }
+
   await actor.update({
-    ...snapshot,
+    ...restoreUpdate,
     "system.formState.activeAlternateFormId": "",
     "system.formState.preAlternateSnapshot": {}
   });
