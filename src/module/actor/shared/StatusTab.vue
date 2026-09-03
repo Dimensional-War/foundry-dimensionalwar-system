@@ -10,11 +10,14 @@
           v-for="btn in formButtons"
           :key="btn.key"
           type="button"
-          class="dw-roll-btn flex-1 px-3 py-1.5 border rounded cursor-pointer transition-colors"
-          :class="btn.active
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'border-gray-600 text-gray-700 hover:bg-gray-50'
-            "
+          class="dw-roll-btn flex-1 px-3 py-1.5 border rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          :class="[
+            btn.active
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'border-gray-600 text-gray-700 hover:bg-gray-50',
+            btn.disabled ? '' : 'cursor-pointer'
+          ]"
+          :disabled="btn.disabled"
           :title="btn.title"
           @click="btn.onClick"
         >
@@ -268,7 +271,9 @@
         <div class="flex-1">
           <button
             type="button"
-            class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+            class="px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+            :disabled="system.gauges.trance < tranceMax"
+            :title="system.gauges.trance < tranceMax ? 'Trance gauge is not full' : 'Spend the full trance gauge'"
             @click="activateTrance"
           >
             Activate
@@ -327,7 +332,9 @@
             />
             <button
               type="button"
-              class="flex-1 px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
+              class="flex-1 px-3 py-1.5 border border-blue-600 rounded bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+              :disabled="!spendLbAmount || spendLbAmount <= 0 || spendLbAmount > limitBreakFullBars"
+              :title="!limitBreakFullBars ? 'No full bars available to spend' : 'Spend the entered number of bars'"
               @click="spendLimitBreak"
             >
               Spend
@@ -561,6 +568,7 @@ interface FormButton {
   label: string;
   title: string;
   active: boolean;
+  disabled: boolean;
   onClick: () => void;
 }
 
@@ -573,15 +581,23 @@ const formButtons = computed<FormButton[]>(() => {
   const transformationMpCost = Math.ceil(
     (system.resources?.mp?.max ?? 0) * 0.05
   );
+  const currentMp = Number(system.resources?.mp?.value) || 0;
+  // Both transforming and reverting charge the same MP cost, so gate on it either way.
+  const cannotAffordMp =
+    transformationMpCost > 0 && currentMp < transformationMpCost;
 
   const transformationButtons = transformations.map(form => {
     const active = activeTransformationId === form.id;
     const action = active ? `Revert from ${form.name}` : `Transform into ${form.name}`;
+    const title = cannotAffordMp
+      ? `Not enough MP (requires ${transformationMpCost})`
+      : `${action} (Costs ${transformationMpCost} MP, 5% of max MP)`;
     return {
       key: `transformation-${form.id}`,
       label: form.name,
-      title: `${action} (Costs ${transformationMpCost} MP, 5% of max MP)`,
+      title,
       active,
+      disabled: cannotAffordMp,
       onClick: () =>
         active
           ? deactivateTransformation(actor)
@@ -598,6 +614,7 @@ const formButtons = computed<FormButton[]>(() => {
         ? `Remove ${form.name} bonuses`
         : `Apply ${form.name} bonuses`,
       active,
+      disabled: false,
       onClick: () =>
         active
           ? deactivateAlternateForm(actor)
