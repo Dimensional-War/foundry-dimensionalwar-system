@@ -1,0 +1,14 @@
+{
+  "TYPES": {
+    "Actor": {
+      "pc": "Player Character",
+      "npc": "Non-Player Character",
+      "ally": "Ally",
+      "enemy": "Enemy",
+      "boss": "Boss"
+    },
+    "Item": {
+      "spell": "Spell"
+    }
+  }
+}

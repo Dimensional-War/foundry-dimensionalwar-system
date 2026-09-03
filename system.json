@@ -28,6 +28,13 @@
       "spell": {}
     }
   },
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
   "socket": true,
   "initiative": "1d@system.statistics.awareness.value",
   "grid": {
