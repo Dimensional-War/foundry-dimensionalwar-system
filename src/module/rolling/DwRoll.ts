@@ -8,6 +8,11 @@ import { parseMults } from "./dice-utils";
  * Without this, Foundry creates StringTerms for "1s0" notation instead of DwSkillDiceTerms.
  */
 export class DwRoll extends foundry.dice.Roll {
+  // Pinned so minification can't rename this class build-to-build. Roll.fromData
+  // matches stored ChatMessage roll data by this name, so a build-specific mangled
+  // name (e.g. "Zd") breaks deserialization of every roll saved under a prior build.
+  static override name = "DwRoll";
+
   /**
    * Preprocess the formula to extract *N[c/f] crit/fail range multipliers before
    * Foundry's parser sees the `*` as arithmetic multiplication.
