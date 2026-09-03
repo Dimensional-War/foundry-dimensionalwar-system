@@ -102,8 +102,8 @@
             v-if="currentShieldSoak > 0"
             title="Shield adds to soak for limited hits"
             :class="{
-              'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0,
-              'text-gray-400 line-through': system.soak.shieldHitsLeft === 0
+              'text-green-600 font-semibold': system.soak.shieldHitsLeft > 0 && !system.combat.emp,
+              'text-gray-400 line-through': system.soak.shieldHitsLeft === 0 || system.combat.emp
             }"
             ><span class="font-bold">Shield: </span>+{{ currentShieldSoak }} ({{
               system.soak.shieldHitsLeft
