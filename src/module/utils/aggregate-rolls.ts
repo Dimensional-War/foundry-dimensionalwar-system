@@ -52,6 +52,7 @@ export async function showAggregateRollDialog(): Promise<void> {
 
   let dialog: Dialog | null = null;
   let updateCallback: (() => void) | null = null;
+  let currentGroupedRolls: GroupedRoll[] = [];
 
   // Function to collect and build dialog content
   function buildDialogContent(): string {
@@ -140,6 +141,7 @@ export async function showAggregateRollDialog(): Promise<void> {
 
     // Group rolls by name
     const groupedRolls = groupRollsByName(rollOptions);
+    currentGroupedRolls = groupedRolls;
 
     // Build HTML for the dialog
     return `
@@ -147,22 +149,6 @@ export async function showAggregateRollDialog(): Promise<void> {
       .aggregate-rolls-dialog {
         max-height: 600px;
         overflow-y: auto;
-      }
-      .roll-all-button {
-        padding: 10px 16px;
-        margin-bottom: 12px;
-        background: #2196F3;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 1.1em;
-        width: 100%;
-        transition: background 0.2s;
-      }
-      .roll-all-button:hover {
-        background: #1976D2;
       }
       .roll-option {
         padding: 10px 12px;
@@ -223,9 +209,6 @@ export async function showAggregateRollDialog(): Promise<void> {
       }
     </style>
     <div class="aggregate-rolls-dialog">
-      <button class="roll-all-button" data-action="roll-all">
-        🎲 Roll All (${groupedRolls.length} unique roll${groupedRolls.length !== 1 ? "s" : ""})
-      </button>
       ${buildGroupedRollListHTML(groupedRolls)}
     </div>
   `;
@@ -251,38 +234,10 @@ export async function showAggregateRollDialog(): Promise<void> {
 
   // Function to attach event handlers
   function attachHandlers(html: JQuery) {
-    const controlled = canvas.tokens?.controlled ?? [];
-    if (controlled.length === 0) return;
-
-    // Re-collect rolls for current selection
-    const rollOptions: RollOption[] = [];
-    for (const token of controlled) {
-      const actor = token.actor as SystemActor | null;
-      if (!actor?.system?.rolls) continue;
-      const rolls = actor.system.rolls as BaseData.RollEntry[];
-      rolls.forEach((roll, idx) => {
-        rollOptions.push({
-          tokenId: token.document.id!,
-          actorId: actor.id!,
-          actorName: actor.name!,
-          rollIndex: idx,
-          roll
-        });
-      });
-    }
-
-    if (rollOptions.length === 0) return;
-    const groupedRolls = groupRollsByName(rollOptions);
-
-    // Roll All button handler
-    html.find('[data-action="roll-all"]').on("click", async function () {
-      await executeAllRolls(groupedRolls);
-    });
-
     // Individual roll group handlers
     html.find(".roll-option").on("click", async function () {
       const rollName = $(this).data("roll-name");
-      const group = groupedRolls.find(g => g.rollName === rollName);
+      const group = currentGroupedRolls.find(g => g.rollName === rollName);
       if (group) {
         await executeRollGroup(group);
       }
@@ -494,21 +449,3 @@ async function rollMovementCheck(
   }
 }
 
-/**
- * Execute all roll groups
- */
-async function executeAllRolls(groupedRolls: GroupedRoll[]): Promise<void> {
-  let totalRolls = 0;
-
-  for (const group of groupedRolls) {
-    await executeRollGroup(group);
-    totalRolls += group.actors.length;
-
-    // Slightly longer delay between different roll types
-    await new Promise(resolve => setTimeout(resolve, 200));
-  }
-
-  ui.notifications?.info(
-    `Executed ${totalRolls} total rolls across ${groupedRolls.length} unique roll type${groupedRolls.length !== 1 ? "s" : ""}`
-  );
-}
