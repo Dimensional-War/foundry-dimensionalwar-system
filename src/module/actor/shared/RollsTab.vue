@@ -148,9 +148,28 @@
     </div>
 
     <!-- Custom Rolls Section -->
-    <h3 class="font-bold text-lg mb-2 text-gray-900">Custom Rolls</h3>
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="font-bold text-lg text-gray-900">Custom Rolls</h3>
+      <div v-if="transformations.length > 0" class="flex items-center gap-2">
+        <label class="text-sm text-gray-700">Filter by form</label>
+        <select
+          v-model="rollFormFilter"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="all">All Rolls</option>
+          <option value="">Always Available</option>
+          <option v-for="form in transformations" :key="form.id" :value="form.id">
+            {{ form.name }}
+          </option>
+        </select>
+      </div>
+    </div>
     <div class="border rounded">
-      <div v-for="(entry, idx) in system.rolls" :key="idx" class="border-b p-2">
+      <div
+        v-for="{ entry, idx } in visibleRolls"
+        :key="idx"
+        class="border-b p-2"
+      >
         <div class="flex flex-wrap gap-1">
           <div class="basis-1/4">
             Category
@@ -249,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed } from "vue";
+import { inject, computed, ref } from "vue";
 import { rollPerceptionCheck } from "../../utils/token-hud";
 import type { SystemActor as SystemActorType } from "../../documents";
 import type { BaseData } from "../../types/base-data";
@@ -272,6 +291,15 @@ const hasSkills = computed(() => {
 });
 
 const transformations = computed(() => system.transformations ?? []);
+
+// "all" = no filter, "" = only untagged (Always Available) rolls, else a transformation id
+const rollFormFilter = ref<string>("all");
+
+const visibleRolls = computed(() => {
+  const all = (system.rolls ?? []).map((entry, idx) => ({ entry, idx }));
+  if (rollFormFilter.value === "all") return all;
+  return all.filter(({ entry }) => (entry.formId ?? "") === rollFormFilter.value);
+});
 
 const categories = [
   "Offensive",

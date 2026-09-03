@@ -189,30 +189,6 @@
           </div>
         </div>
       </div>
-      <div class="flex gap-1 mt-1">
-        <button
-          type="button"
-          class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-          @click="resetDamageState"
-        >
-          Reset State
-        </button>
-        <button
-          type="button"
-          class="flex-1 px-3 py-1.5 border border-yellow-500 rounded bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer transition-colors"
-          @click="undoLastAction"
-        >
-          Undo Last Action
-        </button>
-        <button
-          type="button"
-          class="flex-1 px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!redoStack.length"
-          @click="redoLastAction"
-        >
-          Redo Last Action
-        </button>
-      </div>
       <!-- ─── Elemental Row (visible when elemental damage) ─────── -->
       <div
         v-if="system.combat.damageType === '1'"
@@ -254,6 +230,30 @@
             </select>
           </div>
         </div>
+      </div>
+      <div class="flex gap-1 mt-1">
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+          @click="resetDamageState"
+        >
+          Reset State
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-yellow-500 rounded bg-yellow-500 text-white hover:bg-yellow-600 cursor-pointer transition-colors"
+          @click="undoLastAction"
+        >
+          Undo Last Action
+        </button>
+        <button
+          type="button"
+          class="flex-1 px-3 py-1.5 border border-blue-500 rounded bg-blue-500 text-white hover:bg-blue-600 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!redoStack.length"
+          @click="redoLastAction"
+        >
+          Redo Last Action
+        </button>
       </div>
       <!-- ─── Trance Row ────────────────────────────────────────── -->
       <div v-if="system.gauges.hasTrance" class="flex flex-wrap gap-1 mb-2">
