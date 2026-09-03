@@ -123,6 +123,37 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
             }
           }
 
+          // Update dependent token images if actor is linked and img changed
+          if (this.actor.prototypeToken.actorLink && cleanDiff.img) {
+            const newImg = this.#reactiveActor!.img;
+            const updated = new Set<string>();
+
+            try {
+              for await (const token of this.actor.getDependentTokens()) {
+                if (!token?.id || updated.has(token.id)) continue;
+                updated.add(token.id);
+                if (token.texture.src !== newImg) {
+                  await token.update({ "texture.src": newImg }).catch(() => {});
+                }
+              }
+            } catch (e) {
+              // getDependentTokens might fail, not critical
+            }
+
+            // getDependentTokens() alone can miss tokens on scenes that
+            // haven't registered as dependents, so also sweep every scene.
+            for (const scene of game.scenes?.contents ?? []) {
+              for (const token of scene.tokens) {
+                if (token.actorId !== this.actor.id || !token.actorLink) continue;
+                if (updated.has(token.id)) continue;
+                updated.add(token.id);
+                if (token.texture.src !== newImg) {
+                  await token.update({ "texture.src": newImg }).catch(() => {});
+                }
+              }
+            }
+          }
+
           // Update dependent token light/sight/other prototypeToken fields for linked actors
           if (this.actor.prototypeToken.actorLink && cleanDiff.prototypeToken) {
             try {
@@ -145,6 +176,13 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
 
           // Flatten to dot notation for reliable nested updates
           const updateData = foundry.utils.flattenObject(cleanDiff);
+
+          // Keep the prototype token's image in sync with the portrait so
+          // future-placed tokens (and form snapshot/restore, which reads
+          // prototypeToken.texture.src) don't fall out of sync with it.
+          if (cleanDiff.img && !("prototypeToken.texture.src" in updateData)) {
+            updateData["prototypeToken.texture.src"] = this.#reactiveActor!.img;
+          }
 
           await this.actor.update(updateData);
         },

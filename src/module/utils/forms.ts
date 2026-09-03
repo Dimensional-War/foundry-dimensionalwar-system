@@ -163,32 +163,37 @@ function buildStatUpdate(
   // Trance/Limit Break: mirrors StatusTab.vue (tranceMax = hp.max*2, limitBreakMax = hp.max*4).
   // The target's own hasTrance/hasLimitBreak (if specified) decides whether the
   // form has access to the gauge at all, overriding the base actor's flag while active.
-  const hadTrance = Boolean(system.gauges?.hasTrance);
+  // Rescale the stored value with HP-max changes on every transition, even
+  // while the gauge is hidden (hasTrance/hasLimitBreak false) - otherwise its
+  // percentage basis silently drifts against the max of whatever form was
+  // active while it was hidden, and re-entering a form with the gauge
+  // inflates or deflates it against the wrong max.
   const hasTrance = Boolean(
-    "gauges.hasTrance" in targetFlat ? targetFlat["gauges.hasTrance"] : hadTrance
+    "gauges.hasTrance" in targetFlat
+      ? targetFlat["gauges.hasTrance"]
+      : system.gauges?.hasTrance
   );
-  if (hasTrance) {
+  {
     const oldTranceMax = oldHpMax * 2;
     const newTranceMax = newHpMax * 2;
-    const oldTrance = hadTrance ? Number(system.gauges?.trance) || 0 : 0;
+    const oldTrance = Number(system.gauges?.trance) || 0;
     update["system.gauges.trance"] =
-      overrides?.trance != null
+      hasTrance && overrides?.trance != null
         ? clampToMax(Number(overrides.trance), newTranceMax)
         : scaleResourceValue(oldTrance, oldTranceMax, newTranceMax);
   }
 
-  const hadLimitBreak = Boolean(system.gauges?.hasLimitBreak);
   const hasLimitBreak = Boolean(
     "gauges.hasLimitBreak" in targetFlat
       ? targetFlat["gauges.hasLimitBreak"]
-      : hadLimitBreak
+      : system.gauges?.hasLimitBreak
   );
-  if (hasLimitBreak) {
+  {
     const oldLimitBreakMax = oldHpMax * 4;
     const newLimitBreakMax = newHpMax * 4;
-    const oldLimitBreak = hadLimitBreak ? Number(system.gauges?.limitBreak) || 0 : 0;
+    const oldLimitBreak = Number(system.gauges?.limitBreak) || 0;
     update["system.gauges.limitBreak"] =
-      overrides?.limitBreak != null
+      hasLimitBreak && overrides?.limitBreak != null
         ? clampToMax(Number(overrides.limitBreak), newLimitBreakMax)
         : scaleResourceValue(oldLimitBreak, oldLimitBreakMax, newLimitBreakMax);
   }
