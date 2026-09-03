@@ -1,6 +1,26 @@
 <template>
   <div class="dw-status-rolls-tab flex items-start mx-2 @container">
     <div class="dw-status-tab flex-1" ref="statusColumnRef">
+      <!-- ─── Form Activation Row ────────────────────────────────── -->
+      <div
+        v-if="formButtons.length > 0"
+        class="flex flex-wrap gap-1 mb-2"
+      >
+        <button
+          v-for="btn in formButtons"
+          :key="btn.key"
+          type="button"
+          class="dw-roll-btn flex-1 px-3 py-1.5 border rounded cursor-pointer transition-colors"
+          :class="btn.active
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'border-gray-600 text-gray-700 hover:bg-gray-50'
+            "
+          :title="btn.title"
+          @click="btn.onClick"
+        >
+          {{ btn.label }}
+        </button>
+      </div>
       <!-- ─── HP Row ─────────────────────────────────────────────── -->
       <div class="flex gap-1 my-2">
         <div class="basis-2/12 my-2 font-bold">HP:</div>
@@ -407,7 +427,7 @@
       </div>
     </div>
     <div
-      class="basis-2/12 @lg:basis-3/12 @xl:basis-4/12 @3xl:basis-5/12 mt-2 ms-2 flex flex-col"
+      class="basis-2/12 @lg:basis-3/12 @xl:basis-4/12 @3xl:basis-5/12 ms-2 flex flex-col"
       :style="rollsColumnMaxHeight ? `max-height: ${rollsColumnMaxHeight}px` : undefined"
     >
       <!-- ─── Dice/Bonus Modifiers ─────────────────────────────── -->
@@ -427,16 +447,16 @@
           :title="'Adds to the flat bonus of any roll'"
         />
       </div>
-      <!-- display buttons for all the rolls stored in system.rolls -->
+      <!-- display buttons for rolls available in the current form -->
       <div class="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto">
-          <button v-for="(roll, index) in system.rolls"
-            :key="index"
+          <button v-for="entry in visibleRolls"
+            :key="entry.index"
             type="button"
             class="dw-roll-btn px-3 w-full py-1.5 border border-gray-600 rounded text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors shrink-0"
-            @click="onRollClick(index)"
-            :title="`(${roll.mpCost} mp)`"
+            @click="onRollClick(entry.index)"
+            :title="`(${entry.roll.mpCost} mp)`"
           >
-            {{ roll.reasonBase }}
+            {{ entry.roll.reasonBase }}
           </button>
       </div>
     </div>
@@ -455,6 +475,12 @@ import {
 import { SystemActor } from "~/module/documents";
 import { doRoll } from "~/module/rolling/dice-utils";
 import { BaseData } from "~/module/types/base-data";
+import {
+  activateTransformation,
+  deactivateTransformation,
+  activateAlternateForm,
+  deactivateAlternateForm
+} from "~/module/utils/forms";
 
 const defenseEffectOptions = [
   { value: "no_effect", label: "No Defense Effect", iconClass: "fa-solid fa-ban" },
@@ -527,6 +553,70 @@ onMounted(() => {
 onUnmounted(() => {
   statusColumnResizeObserver?.disconnect();
   statusColumnResizeObserver = null;
+});
+
+// ─── Form activation buttons ────────────────────────────────────────────────
+interface FormButton {
+  key: string;
+  label: string;
+  title: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+const formButtons = computed<FormButton[]>(() => {
+  const transformations = system.transformations ?? [];
+  const alternateForms = system.alternateForms ?? [];
+  const activeTransformationId = system.formState?.activeTransformationId;
+  const activeAlternateFormId = system.formState?.activeAlternateFormId;
+
+  const transformationMpCost = Math.ceil(
+    (system.resources?.mp?.max ?? 0) * 0.05
+  );
+
+  const transformationButtons = transformations.map(form => {
+    const active = activeTransformationId === form.id;
+    const action = active ? `Revert from ${form.name}` : `Transform into ${form.name}`;
+    return {
+      key: `transformation-${form.id}`,
+      label: form.name,
+      title: `${action} (Costs ${transformationMpCost} MP, 5% of max MP)`,
+      active,
+      onClick: () =>
+        active
+          ? deactivateTransformation(actor)
+          : activateTransformation(actor, form.id)
+    };
+  });
+
+  const alternateFormButtons = alternateForms.map(form => {
+    const active = activeAlternateFormId === form.id;
+    return {
+      key: `alternate-${form.id}`,
+      label: form.name,
+      title: active
+        ? `Remove ${form.name} bonuses`
+        : `Apply ${form.name} bonuses`,
+      active,
+      onClick: () =>
+        active
+          ? deactivateAlternateForm(actor)
+          : activateAlternateForm(actor, form.id)
+    };
+  });
+
+  return [...transformationButtons, ...alternateFormButtons];
+});
+
+// Rolls tagged with a transformation's id only show while that transformation
+// is active; untagged rolls always show. Alternate forms don't filter rolls.
+const visibleRolls = computed(() => {
+  const activeTransformationId = system.formState?.activeTransformationId;
+  return (system.rolls ?? [])
+    .map((roll, index) => ({ roll, index }))
+    .filter(
+      ({ roll }) => !roll.formId || roll.formId === activeTransformationId
+    );
 });
 
 // ─── Computed ──────────────────────────────────────────────────────────────

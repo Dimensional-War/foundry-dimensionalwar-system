@@ -234,6 +234,8 @@ export declare namespace BaseData {
     bonusNumber: number;
     mpCost: number;
     reasonBase: string;
+    /** Restricts this roll to a specific transformation form's id; blank = always available. */
+    formId?: string;
   };
 
   type DwSystem = {
@@ -304,5 +306,31 @@ export declare namespace BaseData {
       equipped: boolean;
     }[];
     actionHistory: { name: string; changes: string }[];
+    transformations?: FormEntry[];
+    alternateForms?: FormEntry[];
+    formState?: {
+      activeTransformationId?: string;
+      activeAlternateFormId?: string;
+      baseSnapshot?: Record<string, unknown>;
+      preAlternateSnapshot?: Record<string, unknown>;
+      baseToken?: { src?: string; width?: number; height?: number };
+    };
+  };
+
+  type FormEntry = {
+    id: string;
+    name: string;
+    img?: string;
+    tokenWidth?: number;
+    tokenHeight?: number;
+    statistics?: Record<string, { value: number }>;
+    resources?: { hp?: { max: number }; mp?: { max: number } };
+    soak?: { physicalBase?: number; magicalBase?: number };
+    elements?: {
+      element1Name?: string;
+      element1Level?: number;
+      element2Name?: string;
+      element2Level?: number;
+    };
   };
 }

@@ -6,8 +6,14 @@ import type {
 } from "fvtt-types/utils";
 import { BaseData } from "../types/base-data";
 
-const { ArrayField, BooleanField, NumberField, SchemaField, StringField } =
-  foundry.data.fields;
+const {
+  ArrayField,
+  BooleanField,
+  NumberField,
+  ObjectField,
+  SchemaField,
+  StringField
+} = foundry.data.fields;
 
 const { TypeDataModel } = foundry.abstract;
 
@@ -152,6 +158,105 @@ export function defineSchemaCustoms() {
       })
     })
   );
+}
+
+/**
+ * The subset of the actor stat block that a transformation form can fully
+ * replace, or that an alternate form can add bonuses on top of.
+ */
+function defineSchemaFormStatBlock() {
+  return {
+    statistics: new SchemaField({
+      health: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      awareness: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      dexterity: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      strength: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      spirit: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      luck: new SchemaField({
+        value: new NumberField({ required: true, integer: true, initial: 0 })
+      })
+    }),
+    resources: new SchemaField({
+      hp: new SchemaField({
+        max: new NumberField({ required: true, integer: true, initial: 0 })
+      }),
+      mp: new SchemaField({
+        max: new NumberField({ required: true, integer: true, initial: 0 })
+      })
+    }),
+    soak: new SchemaField({
+      physicalBase: new NumberField({
+        required: true,
+        integer: true,
+        initial: 0
+      }),
+      magicalBase: new NumberField({
+        required: true,
+        integer: true,
+        initial: 0
+      })
+    }),
+    elements: new SchemaField({
+      element1Name: new StringField({ required: true, initial: "no_element" }),
+      element1Level: new NumberField({
+        required: true,
+        integer: true,
+        min: 0,
+        max: 5,
+        initial: 0
+      }),
+      element2Name: new StringField({ required: true, initial: "no_element" }),
+      element2Level: new NumberField({
+        required: true,
+        integer: true,
+        min: 0,
+        max: 5,
+        initial: 0
+      })
+    })
+  };
+}
+
+/**
+ * Transformation forms fully replace the form stat block while active
+ * (and can be layered further by an active alternate form). Alternate forms
+ * instead add their stat block as bonuses on top of whatever is currently
+ * active (base sheet or transformation).
+ */
+function defineSchemaForms() {
+  const formEntry = () =>
+    new SchemaField({
+      id: new StringField({ required: true, blank: false }),
+      name: new StringField({ required: true, initial: "New Form" }),
+      img: new StringField({ required: false }),
+      tokenWidth: new NumberField({ required: false, min: 0 }),
+      tokenHeight: new NumberField({ required: false, min: 0 }),
+      ...defineSchemaFormStatBlock()
+    });
+
+  return {
+    transformations: new ArrayField(formEntry()),
+    alternateForms: new ArrayField(formEntry()),
+    formState: new SchemaField({
+      activeTransformationId: new StringField({ required: false, initial: "" }),
+      activeAlternateFormId: new StringField({ required: false, initial: "" }),
+      // Snapshots used to restore prior values when a form is deactivated.
+      // Stored as loosely-typed objects since they mirror partial stat blocks.
+      baseSnapshot: new ObjectField({ required: false }),
+      preAlternateSnapshot: new ObjectField({ required: false }),
+      baseToken: new ObjectField({ required: false })
+    })
+  };
 }
 
 const actorSchema = () => ({
@@ -470,7 +575,10 @@ const actorSchema = () => ({
         min: 0,
         initial: 0
       }),
-      reasonBase: new StringField()
+      reasonBase: new StringField(),
+      // Restricts this roll to a specific transformation form (its id). Blank
+      // means the roll is always available, regardless of active form.
+      formId: new StringField({ required: false, initial: "" })
     })
   ),
   bonuses: new SchemaField({
@@ -481,7 +589,8 @@ const actorSchema = () => ({
       taste: new NumberField({ required: true, initial: 0 }),
       touch: new NumberField({ required: true, initial: 0 })
     })
-  })
+  }),
+  ...defineSchemaForms()
 });
 
 export type ActorSchema = typeof actorSchema;

@@ -152,8 +152,12 @@ function determineActorType(
     return "npc";
   }
 
-  // Default to npc for unrecognized (most actors are NPCs)
-  return "npc";
+  // Default to pc for unrecognized folders. Real CSB exports file NPCs,
+  // enemies, allies, and bosses under explicit folder names, while PCs are
+  // typically organized by player nickname (e.g. "aj/", "cody/"), which
+  // can't be pattern-matched — so anything not explicitly flagged above is
+  // almost always a PC.
+  return "pc";
 }
 
 /**

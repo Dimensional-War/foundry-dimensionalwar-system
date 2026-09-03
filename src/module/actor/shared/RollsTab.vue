@@ -163,22 +163,13 @@
               </option>
             </select>
           </div>
-          <div class="basis-1/6">
+          <div class="basis-1/4">
             Formula
             <input
               type="text"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               v-model="entry.bonusFormula"
-              placeholder="Formula (e.g. 1s5, 1s5*2, 1s5*2c,3f)"
-            />
-          </div>
-          <div class="basis-1/10">
-            Bonus
-            <input
-              type="number"
-              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              v-model.number="entry.bonusNumber"
-              placeholder="Bonus"
+              placeholder="Formula (e.g. 1s5+2, 1s5*2, 1s5*2c,3f)"
             />
           </div>
           <div class="basis-1/10">
@@ -189,6 +180,23 @@
               v-model.number="entry.mpCost"
               placeholder="MP Cost"
             />
+          </div>
+          <div v-if="transformations.length > 0" class="basis-1/5">
+            Transformation
+            <select
+              v-model="entry.formId"
+              class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              :title="'Restrict this roll to a specific transformation; leave as Always Available otherwise'"
+            >
+              <option value="">Always Available</option>
+              <option
+                v-for="form in transformations"
+                :key="form.id"
+                :value="form.id"
+              >
+                {{ form.name }}
+              </option>
+            </select>
           </div>
           <div class="basis-auto">
             Roll
@@ -262,6 +270,8 @@ const actor = inject<SystemActor>("actor")!;
 const hasSkills = computed(() => {
   return !!(system.skills?.movement && system.skills?.senses);
 });
+
+const transformations = computed(() => system.transformations ?? []);
 
 const categories = [
   "Offensive",
@@ -349,7 +359,8 @@ function addRoll() {
     bonusFormula: "",
     bonusNumber: 0,
     mpCost: 0,
-    reasonBase: ""
+    reasonBase: "",
+    formId: ""
   };
   system.rolls.push(newRoll);
 }

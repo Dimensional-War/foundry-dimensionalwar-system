@@ -320,6 +320,19 @@ if (import.meta.env.DEV) {
   });
 }
 
+// Between "init" and document initialization, Foundry rebuilds CONFIG.Dice.termTypes
+// from CONFIG.Dice.terms keyed by each class's static `name`. Since DwSkillDiceTerm's
+// name is forced to "Die" (required so it properly extends Die), that rebuild clobbers
+// both the "Die" -> core Die mapping and drops the "DwSkillDiceTerm" key entirely,
+// breaking Roll.fromData for any stored roll (e.g. old chat messages) that references
+// class "DwSkillDiceTerm". Re-assert both mappings once more, right before documents
+// (including ChatMessages) are initialized.
+Hooks.once("setup", () => {
+  CONFIG.Dice.termTypes.Die = foundry.dice.terms.Die;
+  // @ts-expect-error - Custom DiceTerm type registration
+  CONFIG.Dice.termTypes.DwSkillDiceTerm = DwSkillDiceTerm;
+});
+
 // ─── Token HUD: Inject Perception Button ──────────────────────────────────────
 
 Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {

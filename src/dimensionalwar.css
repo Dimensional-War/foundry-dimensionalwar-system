@@ -113,6 +113,17 @@
         font-size: 0.85em;
         color: #666;
         text-transform: capitalize;
+        background: transparent;
+        border: 1px solid transparent;
+        padding: 1px 2px;
+        cursor: pointer;
+    }
+
+    .dw-actor-type:hover,
+    .dw-actor-type:focus {
+        border-color: #9e9a8e;
+        background: rgba(0, 0, 0, 0.05);
+        outline: none;
     }
 
     /* ── Tab Content ────────────────────────────────────────────── */
