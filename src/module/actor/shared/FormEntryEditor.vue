@@ -147,39 +147,47 @@
       <div class="grid grid-cols-4 gap-2">
         <div>
           <label class="block mb-1">Element 1</label>
-          <input
-            type="text"
+          <select
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
             v-model="form.elements.element1Name"
-          />
+          >
+            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+              {{ el.label }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block mb-1">Level</label>
-          <input
-            type="number"
-            min="0"
-            max="5"
+          <select
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
             v-model.number="form.elements.element1Level"
-          />
+          >
+            <option v-for="n in 6" :key="n - 1" :value="n - 1">
+              {{ n - 1 }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block mb-1">Element 2</label>
-          <input
-            type="text"
+          <select
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
             v-model="form.elements.element2Name"
-          />
+          >
+            <option v-for="el in elementChoices" :key="el.key" :value="el.key">
+              {{ el.label }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block mb-1">Level</label>
-          <input
-            type="number"
-            min="0"
-            max="5"
+          <select
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
             v-model.number="form.elements.element2Level"
-          />
+          >
+            <option v-for="n in 6" :key="n - 1" :value="n - 1">
+              {{ n - 1 }}
+            </option>
+          </select>
         </div>
       </div>
     </fieldset>
@@ -188,6 +196,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { ELEMENT_CHOICES as elementChoices } from "~/module/utils/elements.ts";
 
 interface FormEntry {
   id: string;
