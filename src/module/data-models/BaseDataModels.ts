@@ -188,10 +188,48 @@ function defineSchemaFormStatBlock() {
     }),
     resources: new SchemaField({
       hp: new SchemaField({
-        max: new NumberField({ required: true, integer: true, initial: 0 })
+        max: new NumberField({ required: true, integer: true, initial: 0 }),
+        // Explicit current HP for this form. Null = auto (preserve the % of
+        // max HP remaining from whatever form was just left).
+        current: new NumberField({
+          required: false,
+          nullable: true,
+          integer: true,
+          min: 0,
+          initial: null
+        })
       }),
       mp: new SchemaField({
-        max: new NumberField({ required: true, integer: true, initial: 0 })
+        max: new NumberField({ required: true, integer: true, initial: 0 }),
+        current: new NumberField({
+          required: false,
+          nullable: true,
+          integer: true,
+          min: 0,
+          initial: null
+        })
+      })
+    }),
+    gauges: new SchemaField({
+      // Whether this form has access to Trance/Limit Break at all, overriding
+      // the base actor's gauges.hasTrance/hasLimitBreak while the form is active.
+      hasTrance: new BooleanField({ required: false, initial: false }),
+      hasLimitBreak: new BooleanField({ required: false, initial: false }),
+      // Explicit current Trance/Limit Break for this form. Null = auto
+      // (preserve the % of that gauge's max, which scales with HP max).
+      trance: new NumberField({
+        required: false,
+        nullable: true,
+        integer: true,
+        min: 0,
+        initial: null
+      }),
+      limitBreak: new NumberField({
+        required: false,
+        nullable: true,
+        integer: true,
+        min: 0,
+        initial: null
       })
     }),
     soak: new SchemaField({

@@ -139,6 +139,69 @@
             v-model.number="form.soak.magicalBase"
           />
         </div>
+        <div v-if="!bonusMode">
+          <label class="block mb-1" title="Blank = auto-computed from the % of HP remaining in whatever form was just left">
+            Current HP (optional)
+          </label>
+          <input
+            type="number"
+            min="0"
+            :placeholder="`Auto (${hpAutoPreview})`"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model="hpCurrentInput"
+          />
+        </div>
+        <div v-if="!bonusMode">
+          <label class="block mb-1" title="Blank = auto-computed from the % of MP remaining in whatever form was just left">
+            Current MP (optional)
+          </label>
+          <input
+            type="number"
+            min="0"
+            :placeholder="`Auto (${mpAutoPreview})`"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model="mpCurrentInput"
+          />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset v-if="!bonusMode" class="border p-2 mb-2">
+      <legend class="font-bold">Gauges</legend>
+      <p class="text-xs text-gray-500 mb-2">
+        Unchecked = this form doesn't have that gauge, regardless of the base
+        sheet. Current value blank = auto-computed from the % remaining in
+        whatever form was just left.
+      </p>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="flex items-center gap-2 mb-1">
+            <input type="checkbox" v-model="form.gauges.hasTrance" />
+            Has Trance
+          </label>
+          <input
+            v-if="form.gauges.hasTrance"
+            type="number"
+            min="0"
+            :placeholder="`Auto (${tranceAutoPreview})`"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model="tranceInput"
+          />
+        </div>
+        <div>
+          <label class="flex items-center gap-2 mb-1">
+            <input type="checkbox" v-model="form.gauges.hasLimitBreak" />
+            Has Limit Break
+          </label>
+          <input
+            v-if="form.gauges.hasLimitBreak"
+            type="number"
+            min="0"
+            :placeholder="`Auto (${limitBreakAutoPreview})`"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model="limitBreakInput"
+          />
+        </div>
       </div>
     </fieldset>
 
@@ -195,8 +258,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, inject } from "vue";
 import { ELEMENT_CHOICES as elementChoices } from "~/module/utils/elements.ts";
+
+interface LiveSystem {
+  resources?: { hp?: { value?: number; max?: number }; mp?: { value?: number; max?: number } };
+  gauges?: { trance?: number; limitBreak?: number };
+}
 
 interface FormEntry {
   id: string;
@@ -205,7 +273,16 @@ interface FormEntry {
   tokenWidth?: number;
   tokenHeight?: number;
   statistics: Record<string, { value: number }>;
-  resources: { hp: { max: number }; mp: { max: number } };
+  resources: {
+    hp: { max: number; current?: number | null };
+    mp: { max: number; current?: number | null };
+  };
+  gauges: {
+    hasTrance: boolean;
+    hasLimitBreak: boolean;
+    trance?: number | null;
+    limitBreak?: number | null;
+  };
   soak: { physicalBase: number; magicalBase: number };
   elements: {
     element1Name: string;
@@ -231,6 +308,45 @@ defineEmits<{
   deactivate: [];
 }>();
 
+const system = inject<LiveSystem>("reactiveSystem")!;
+
+// Preview what the "Auto" resolution would actually produce right now
+// (same math as forms.ts's scaleResourceValue), so the placeholder shows a
+// concrete number instead of leaving the user to guess a percentage.
+function scalePreview(value: number, fromMax: number, toMax: number): number {
+  if (!fromMax) return value;
+  return Math.max(0, Math.round((value / fromMax) * toMax));
+}
+
+const hpAutoPreview = computed(() =>
+  scalePreview(
+    system.resources?.hp?.value ?? 0,
+    system.resources?.hp?.max ?? 0,
+    props.form.resources.hp.max ?? 0
+  )
+);
+const mpAutoPreview = computed(() =>
+  scalePreview(
+    system.resources?.mp?.value ?? 0,
+    system.resources?.mp?.max ?? 0,
+    props.form.resources.mp.max ?? 0
+  )
+);
+const tranceAutoPreview = computed(() =>
+  scalePreview(
+    system.gauges?.trance ?? 0,
+    (system.resources?.hp?.max ?? 0) * 2,
+    (props.form.resources.hp.max ?? 0) * 2
+  )
+);
+const limitBreakAutoPreview = computed(() =>
+  scalePreview(
+    system.gauges?.limitBreak ?? 0,
+    (system.resources?.hp?.max ?? 0) * 4,
+    (props.form.resources.hp.max ?? 0) * 4
+  )
+);
+
 const mpCostTooltip = computed(() =>
   props.mpCost ? `Costs ${props.mpCost} MP (5% of max MP)` : undefined
 );
@@ -254,4 +370,36 @@ const statKeys = [
   "spirit",
   "luck"
 ] as const;
+
+// Text-bound (not v-model.number) so the field can be left blank to mean
+// "no override, auto-scale by %" (stored as null) rather than 0.
+function nullableNumberInput(get: () => number | null | undefined, set: (v: number | null) => void) {
+  return computed<string>({
+    get: () => {
+      const value = get();
+      return value === null || value === undefined ? "" : String(value);
+    },
+    set: raw => {
+      const trimmed = raw.trim();
+      set(trimmed === "" ? null : Number(trimmed));
+    }
+  });
+}
+
+const hpCurrentInput = nullableNumberInput(
+  () => props.form.resources.hp.current,
+  v => (props.form.resources.hp.current = v)
+);
+const mpCurrentInput = nullableNumberInput(
+  () => props.form.resources.mp.current,
+  v => (props.form.resources.mp.current = v)
+);
+const tranceInput = nullableNumberInput(
+  () => props.form.gauges.trance,
+  v => (props.form.gauges.trance = v)
+);
+const limitBreakInput = nullableNumberInput(
+  () => props.form.gauges.limitBreak,
+  v => (props.form.gauges.limitBreak = v)
+);
 </script>

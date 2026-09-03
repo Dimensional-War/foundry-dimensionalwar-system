@@ -324,7 +324,16 @@ export declare namespace BaseData {
     tokenWidth?: number;
     tokenHeight?: number;
     statistics?: Record<string, { value: number }>;
-    resources?: { hp?: { max: number }; mp?: { max: number } };
+    resources?: {
+      hp?: { max: number; current?: number | null };
+      mp?: { max: number; current?: number | null };
+    };
+    gauges?: {
+      hasTrance?: boolean;
+      hasLimitBreak?: boolean;
+      trance?: number | null;
+      limitBreak?: number | null;
+    };
     soak?: { physicalBase?: number; magicalBase?: number };
     elements?: {
       element1Name?: string;

@@ -1097,10 +1097,13 @@ async function activateTrance() {
     ui.notifications?.warn("Trance gauge is not full.");
     return;
   }
-  // Save old value for undo
-  pushHistory("activateTrance", { "gauges.trance": system.gauges.trance });
+  const oldTrance = system.gauges.trance;
   system.gauges.trance = 0;
   await sheet.saveSystem({ "gauges.trance": 0 });
+  // Record for undo after the spend has actually landed, matching the
+  // save-then-record ordering used elsewhere (dealDamage/dealHealing) so
+  // this write can't race the reactive watcher's own auto-save.
+  pushHistory("activateTrance", { "gauges.trance": oldTrance });
 }
 
 async function spendLimitBreak() {

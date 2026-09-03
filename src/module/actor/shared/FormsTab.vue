@@ -83,7 +83,16 @@ interface FormEntry {
   tokenWidth?: number;
   tokenHeight?: number;
   statistics: Record<string, { value: number }>;
-  resources: { hp: { max: number }; mp: { max: number } };
+  resources: {
+    hp: { max: number; current?: number | null };
+    mp: { max: number; current?: number | null };
+  };
+  gauges?: {
+    hasTrance?: boolean;
+    hasLimitBreak?: boolean;
+    trance?: number | null;
+    limitBreak?: number | null;
+  };
   soak: { physicalBase: number; magicalBase: number };
   elements: {
     element1Name: string;
@@ -127,7 +136,13 @@ function blankForm(): FormEntry {
       spirit: { value: 0 },
       luck: { value: 0 }
     },
-    resources: { hp: { max: 0 }, mp: { max: 0 } },
+    resources: { hp: { max: 0, current: null }, mp: { max: 0, current: null } },
+    gauges: {
+      hasTrance: false,
+      hasLimitBreak: false,
+      trance: null,
+      limitBreak: null
+    },
     soak: { physicalBase: 0, magicalBase: 0 },
     elements: {
       element1Name: "no_element",
