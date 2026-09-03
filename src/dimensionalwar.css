@@ -126,6 +126,12 @@
         outline: none;
     }
 
+    /* ── Tab Bar ───────────────────────────────────────────────── */
+    .dw-sheet .dw-tab-btn:hover {
+        color: #b91c1c;
+        background: rgba(0, 0, 0, 0.08);
+    }
+
     /* ── Tab Content ────────────────────────────────────────────── */
     .dw-tab-content {
         flex: 1;

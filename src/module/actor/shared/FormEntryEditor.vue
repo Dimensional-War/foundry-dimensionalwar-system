@@ -352,7 +352,7 @@ const mpCostTooltip = computed(() =>
 );
 
 function pickTokenImage() {
-  const fp = new FilePicker({
+  const fp = new foundry.applications.apps.FilePicker.implementation({
     type: "image",
     current: props.form.img ?? undefined,
     callback: (path: string) => {

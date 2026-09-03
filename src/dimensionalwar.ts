@@ -99,7 +99,7 @@ const initHandler = () => {
   CONFIG.Dice.termTypes.DwSkillDiceTerm = DwSkillDiceTerm;
 
   // Load shared roll card template (used by kefka-sync module for dice display)
-  loadTemplates(["systems/dimensionalwar/templates/roll.hbs"]);
+  foundry.applications.handlebars.loadTemplates(["systems/dimensionalwar/templates/roll.hbs"]);
 
   // Register game settings
   // @ts-expect-error - Custom system namespace

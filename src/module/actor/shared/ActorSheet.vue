@@ -34,7 +34,7 @@
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        class="px-4 py-2 border rounded-t cursor-pointer text-sm text-gray-700 transition-all duration-150 ease-in-out relative -mb-px mr-0.5 hover:text-red-600 hover:border-gray-300 hover:border-b-gray-300"
+        class="dw-tab-btn px-4 py-2 border rounded-t cursor-pointer text-sm text-gray-700 transition-all duration-150 ease-in-out relative -mb-px mr-0.5 hover:text-red-600 hover:border-gray-300 hover:border-b-gray-300"
         :class="activeTab === tab.id
             ? 'bg-gray-600/15 border-b-gray-600/15'
             : 'bg-transparent'
@@ -190,7 +190,7 @@ watch(activeTab, newTab => {
 
 function editImage() {
   // Use Foundry's file picker
-  const fp = new FilePicker({
+  const fp = new foundry.applications.apps.FilePicker.implementation({
     type: "image",
     current: actor.img ?? undefined,
     callback: (path: string) => {
