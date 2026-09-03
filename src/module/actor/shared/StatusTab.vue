@@ -115,7 +115,7 @@
           <div class="flex gap-0">
             <button
               type="button"
-              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors"
+              class="flex-1 px-3 py-1.5 border border-gray-600 rounded-l cursor-pointer transition-colors whitespace-nowrap"
               :class="system.soak.shieldHitsLeft > 0
                 ? 'bg-blue-600 text-white border-blue-600 z-10'
                 : ' text-gray-700 hover:bg-gray-50'
