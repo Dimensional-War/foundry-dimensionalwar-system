@@ -187,6 +187,11 @@ export default defineConfig(({ mode }) => ({
               src: "templates/*",
               dest: "templates",
               rename: { stripBase: true }
+            },
+            {
+              src: "lang/*",
+              dest: "lang",
+              rename: { stripBase: true }
             }
           ]
         })
