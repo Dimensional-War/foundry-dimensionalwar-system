@@ -94,14 +94,13 @@ const tabs = computed(() => {
     ];
   }
 
-  // PC and Ally: Status, Rolls, Armor, Statistics, Customs, Forms
+  // PC and Ally: Status, Rolls, Armor, Statistics, Forms (Customs hidden for now)
   if (type === ActorType.Pc || type === ActorType.Ally) {
     return [
       { id: "status", label: "Status" },
       { id: "rolls", label: "Rolls" },
       { id: "armor", label: "Armor" },
       { id: "statistics", label: "Statistics" },
-      { id: "customs", label: "Customs" },
       { id: "forms", label: "Forms" }
     ];
   }
