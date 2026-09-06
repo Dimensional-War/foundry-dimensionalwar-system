@@ -131,12 +131,20 @@ function clampToMax(value: number, max: number): number {
  * explicit override (if given) or by rescaling so the percentage of the
  * relevant max is preserved across the max change - Trance/Limit Break maxes
  * scale with HP max the same way StatusTab.vue derives them (×2 and ×4).
+ *
+ * `resources.hp.value` is deliberately left out of the returned update (see
+ * `hpValue`/`oldHpValue`) - it's applied as its own follow-up actor update by
+ * the caller so third-party wound-tracking modules (e.g.
+ * tokenmagic-automatic-wounds), which key off `system.resources.hp.value` in
+ * the `preUpdateActor` diff to detect damage/healing, see an isolated HP
+ * change measured against the form's *already-applied* new max rather than a
+ * combined max+value diff that would make the percentage lost look wrong.
  */
 function buildStatUpdate(
   system: any,
   targetFlat: Record<string, unknown>,
   overrides?: FormOverrides
-): Record<string, unknown> {
+): { update: Record<string, unknown>; oldHpValue: number; hpValue: number } {
   const update: Record<string, unknown> = {};
   for (const path of STAT_PATHS) {
     if (path in targetFlat) update[`system.${path}`] = targetFlat[path];
@@ -149,7 +157,6 @@ function buildStatUpdate(
     overrides?.hpCurrent != null
       ? clampToMax(Number(overrides.hpCurrent), newHpMax)
       : scaleResourceValue(oldHpValue, oldHpMax, newHpMax);
-  update["system.resources.hp.value"] = newHpValue;
 
   const oldMpMax = Number(system.resources?.mp?.max) || 0;
   const oldMpValue = Number(system.resources?.mp?.value) || 0;
@@ -198,7 +205,25 @@ function buildStatUpdate(
         : scaleResourceValue(oldLimitBreak, oldLimitBreakMax, newLimitBreakMax);
   }
 
-  return update;
+  return { update, oldHpValue, hpValue: newHpValue };
+}
+
+/**
+ * Apply a form-switch stat update in two steps so wound-tracking modules see
+ * an isolated HP diff: the max/stat update lands first, then - only if the
+ * HP value actually changed - a second update carries just
+ * `resources.hp.value`, mirroring how normal damage/heal updates
+ * (StatusTab.vue, apply-damage.ts) already send that field on its own.
+ */
+async function applyStatUpdate(
+  actor: SystemActor,
+  { update, oldHpValue, hpValue }: ReturnType<typeof buildStatUpdate>,
+  extra: Record<string, unknown> = {}
+): Promise<void> {
+  await actor.update({ ...update, ...extra });
+  if (hpValue !== oldHpValue) {
+    await actor.update({ "system.resources.hp.value": hpValue });
+  }
 }
 
 /** Build a `system.`-prefixed update adding a form entry's block on top of current live values. */
@@ -218,6 +243,30 @@ function tokenUpdateFromForm(form: FormEntry): Record<string, unknown> {
   if (form.tokenWidth) update["prototypeToken.width"] = form.tokenWidth;
   if (form.tokenHeight) update["prototypeToken.height"] = form.tokenHeight;
   return update;
+}
+
+/**
+ * The token whose current size/texture reflects this actor right now: the
+ * synthetic actor's own token if opened from a specific unlinked token,
+ * otherwise a single already-placed instance (its size may have diverged
+ * from the prototype, e.g. a boss resized by hand after placement), falling
+ * back to the prototype when there's no single unambiguous instance.
+ */
+function currentLiveToken(
+  actor: SystemActor
+): { texture?: { src?: string }; width?: number; height?: number } | null {
+  if ((actor as any).isToken && (actor as any).token) return (actor as any).token;
+
+  const instances = new Map<string, any>();
+  for (const token of actor.getDependentTokens()) {
+    if (token?.id) instances.set(token.id, token);
+  }
+  for (const scene of game.scenes?.contents ?? []) {
+    for (const token of scene.tokens) {
+      if (token.actorId === actor.id) instances.set(token.id, token);
+    }
+  }
+  return instances.size === 1 ? [...instances.values()][0] : null;
 }
 
 async function applyTokenUpdate(
@@ -246,24 +295,24 @@ async function applyTokenUpdate(
   // Base actor: update the prototype (affects future-placed tokens).
   await actor.update(update).catch(() => {});
 
-  // Linked actor: propagate to every already-placed token, since changing
-  // the prototype doesn't retroactively update tokens already on a scene.
-  // getDependentTokens() alone can miss tokens on scenes that haven't
-  // registered as dependents, so also sweep every scene directly.
-  if (actor.prototypeToken.actorLink) {
-    const updated = new Set<string>();
-    for (const token of actor.getDependentTokens()) {
-      if (!token?.id || updated.has(token.id)) continue;
+  // Propagate to every already-placed token derived from this actor, linked
+  // or not: changing the prototype doesn't retroactively update tokens
+  // already on a scene, and width/height live on the TokenDocument itself
+  // (not on actor data), so unlinked instances never inherit the change
+  // otherwise. getDependentTokens() alone can miss tokens on scenes that
+  // haven't registered as dependents, so also sweep every scene directly.
+  const updated = new Set<string>();
+  for (const token of actor.getDependentTokens()) {
+    if (!token?.id || updated.has(token.id)) continue;
+    updated.add(token.id);
+    await token.update(tokenFlat).catch(() => {});
+  }
+  for (const scene of game.scenes?.contents ?? []) {
+    for (const token of scene.tokens) {
+      if (token.actorId !== actor.id) continue;
+      if (updated.has(token.id)) continue;
       updated.add(token.id);
       await token.update(tokenFlat).catch(() => {});
-    }
-    for (const scene of game.scenes?.contents ?? []) {
-      for (const token of scene.tokens) {
-        if (token.actorId !== actor.id || !token.actorLink) continue;
-        if (updated.has(token.id)) continue;
-        updated.add(token.id);
-        await token.update(tokenFlat).catch(() => {});
-      }
     }
   }
 }
@@ -290,10 +339,11 @@ export async function activateTransformation(
   }
 
   const baseSnapshot = snapshotStats(system);
+  const liveToken = currentLiveToken(actor);
   const baseToken = {
-    src: actor.prototypeToken.texture.src,
-    width: actor.prototypeToken.width,
-    height: actor.prototypeToken.height
+    src: liveToken?.texture?.src ?? actor.prototypeToken.texture.src,
+    width: liveToken?.width ?? actor.prototypeToken.width,
+    height: liveToken?.height ?? actor.prototypeToken.height
   };
 
   const statUpdate = buildStatUpdate(
@@ -302,8 +352,7 @@ export async function activateTransformation(
     overridesFromForm(form)
   );
 
-  await actor.update({
-    ...statUpdate,
+  await applyStatUpdate(actor, statUpdate, {
     "system.formState.activeTransformationId": formId,
     "system.formState.baseSnapshot": baseSnapshot,
     "system.formState.baseToken": baseToken
@@ -338,8 +387,7 @@ export async function deactivateTransformation(actor: SystemActor): Promise<void
 
   const statUpdate = buildStatUpdate(withMpDeducted(system, mpCost), snapshot);
 
-  await actor.update({
-    ...statUpdate,
+  await applyStatUpdate(actor, statUpdate, {
     "system.formState.activeTransformationId": "",
     "system.formState.baseSnapshot": {},
     "system.formState.baseToken": {}

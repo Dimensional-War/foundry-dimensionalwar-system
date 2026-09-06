@@ -29,6 +29,9 @@
 		},
 		{
 			"path": "C:/Users/Brendan/AppData/Roaming/mIRC/scripts/DW_Foundry_Client"
+		},
+		{
+			"path": "../foundry-faserip"
 		}
 	],
 	"settings": {}
