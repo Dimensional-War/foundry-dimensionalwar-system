@@ -261,6 +261,12 @@ function defineSchemaFormStatBlock() {
         max: 5,
         initial: 0
       })
+    }),
+    // Per-form overrides for movement/perception skills: a transformation
+    // replaces the base level/bonus outright, an alternate form adds to it.
+    skills: new SchemaField({
+      movement: defineSchemaSkills(["Acrobatics", "Athletics", "Reaction", "Swimming"]),
+      senses: defineSchemaSkills(["Perception"])
     })
   };
 }
@@ -615,7 +621,7 @@ const actorSchema = () => ({
       }),
       reasonBase: new StringField(),
       // Restricts this roll to a specific transformation form (its id). Blank
-      // means the roll is always available, regardless of active form.
+      // means the roll only applies to the base form (not while transformed).
       formId: new StringField({ required: false, initial: "" })
     })
   ),

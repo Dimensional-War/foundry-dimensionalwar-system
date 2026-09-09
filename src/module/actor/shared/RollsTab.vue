@@ -157,7 +157,7 @@
           class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">All Rolls</option>
-          <option value="">Always Available</option>
+          <option value="">Base Form Only</option>
           <option v-for="form in transformations" :key="form.id" :value="form.id">
             {{ form.name }}
           </option>
@@ -205,9 +205,9 @@
             <select
               v-model="entry.formId"
               class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              :title="'Restrict this roll to a specific transformation; leave as Always Available otherwise'"
+              :title="'Restrict this roll to a specific transformation, or leave as Base Form Only'"
             >
-              <option value="">Always Available</option>
+              <option value="">Base Form Only</option>
               <option
                 v-for="form in transformations"
                 :key="form.id"
@@ -292,7 +292,7 @@ const hasSkills = computed(() => {
 
 const transformations = computed(() => system.transformations ?? []);
 
-// "all" = no filter, "" = only untagged (Always Available) rolls, else a transformation id
+// "all" = no filter, "" = only untagged (Base Form Only) rolls, else a transformation id
 const rollFormFilter = ref<string>("all");
 
 const visibleRolls = computed(() => {

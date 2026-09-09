@@ -205,6 +205,42 @@
       </div>
     </fieldset>
 
+    <fieldset class="border p-2 mb-2">
+      <legend class="font-bold">
+        {{ bonusMode ? "Movement/Perception Bonuses" : "Movement/Perception Skills" }}
+      </legend>
+      <div class="grid grid-cols-4 gap-2">
+        <div v-for="skillName in movementSkillKeys" :key="skillName">
+          <label class="block mb-1">{{ skillName }} Level</label>
+          <input
+            type="number"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model.number="form.skills.movement[skillName].level"
+          />
+          <label class="block mb-1">{{ skillName }} Bonus</label>
+          <input
+            type="number"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model.number="form.skills.movement[skillName].bonus"
+          />
+        </div>
+        <div>
+          <label class="block mb-1">Perception Level</label>
+          <input
+            type="number"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model.number="form.skills.senses.Perception.level"
+          />
+          <label class="block mb-1">Perception Bonus</label>
+          <input
+            type="number"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model.number="form.skills.senses.Perception.bonus"
+          />
+        </div>
+      </div>
+    </fieldset>
+
     <fieldset v-if="!bonusMode" class="border p-2">
       <legend class="font-bold">Elements</legend>
       <div class="grid grid-cols-4 gap-2">
@@ -290,6 +326,10 @@ interface FormEntry {
     element2Name: string;
     element2Level: number;
   };
+  skills: {
+    movement: Record<string, { level: number; bonus: number }>;
+    senses: Record<string, { level: number; bonus: number }>;
+  };
 }
 
 // `form` is the live entry from reactiveSystem (not a copy), so v-model
@@ -370,6 +410,8 @@ const statKeys = [
   "spirit",
   "luck"
 ] as const;
+
+const movementSkillKeys = ["Acrobatics", "Athletics", "Reaction", "Swimming"] as const;
 
 // Text-bound (not v-model.number) so the field can be left blank to mean
 // "no override, auto-scale by %" (stored as null) rather than 0.

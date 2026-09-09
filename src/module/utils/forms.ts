@@ -17,7 +17,17 @@ const STAT_PATHS = [
   "elements.element2Name",
   "elements.element2Level",
   "gauges.hasTrance",
-  "gauges.hasLimitBreak"
+  "gauges.hasLimitBreak",
+  "skills.movement.Acrobatics.level",
+  "skills.movement.Acrobatics.bonus",
+  "skills.movement.Athletics.level",
+  "skills.movement.Athletics.bonus",
+  "skills.movement.Reaction.level",
+  "skills.movement.Reaction.bonus",
+  "skills.movement.Swimming.level",
+  "skills.movement.Swimming.bonus",
+  "skills.senses.Perception.level",
+  "skills.senses.Perception.bonus"
 ] as const;
 
 interface FormEntry {
@@ -39,6 +49,10 @@ interface FormEntry {
   };
   soak?: any;
   elements?: any;
+  skills?: {
+    movement?: Record<string, { level?: number; bonus?: number }>;
+    senses?: Record<string, { level?: number; bonus?: number }>;
+  };
 }
 
 /** Explicit current-value overrides for a form; null/absent = auto-scale by percentage. */
@@ -87,7 +101,8 @@ function flattenFormStats(form: FormEntry): Record<string, unknown> {
     resources: form.resources,
     gauges: form.gauges,
     soak: form.soak,
-    elements: form.elements
+    elements: form.elements,
+    skills: form.skills
   });
   const flat: Record<string, unknown> = {};
   for (const path of STAT_PATHS) {

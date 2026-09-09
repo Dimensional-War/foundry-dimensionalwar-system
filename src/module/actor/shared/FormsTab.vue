@@ -100,6 +100,10 @@ interface FormEntry {
     element2Name: string;
     element2Level: number;
   };
+  skills: {
+    movement: Record<string, { level: number; bonus: number }>;
+    senses: Record<string, { level: number; bonus: number }>;
+  };
 }
 
 interface SystemData {
@@ -149,6 +153,17 @@ function blankForm(): FormEntry {
       element1Level: 0,
       element2Name: "no_element",
       element2Level: 0
+    },
+    skills: {
+      movement: {
+        Acrobatics: { level: 0, bonus: 0 },
+        Athletics: { level: 0, bonus: 0 },
+        Reaction: { level: 0, bonus: 0 },
+        Swimming: { level: 0, bonus: 0 }
+      },
+      senses: {
+        Perception: { level: 0, bonus: 0 }
+      }
     }
   };
 }
