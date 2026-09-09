@@ -76,6 +76,7 @@ function snapshotStats(system: any): Record<string, unknown> {
   for (const path of STAT_PATHS) {
     flat[path] = getByPath(system, path);
   }
+  // @ts-expect-error
   return foundry.utils.expandObject(flat);
 }
 
@@ -90,13 +91,18 @@ function flattenFormStats(form: FormEntry): Record<string, unknown> {
   });
   const flat: Record<string, unknown> = {};
   for (const path of STAT_PATHS) {
+    // @ts-expect-error
     if (path in flatForm) flat[path] = flatForm[path];
   }
   return flat;
 }
 
 /** Preserve HP/MP percentage when max changes: same fraction remaining under the new max. */
-function scaleResourceValue(value: number, fromMax: number, toMax: number): number {
+function scaleResourceValue(
+  value: number,
+  fromMax: number,
+  toMax: number
+): number {
   if (!fromMax) return value;
   const ratio = value / fromMax;
   return Math.max(0, Math.round(ratio * toMax));
@@ -220,14 +226,27 @@ async function applyStatUpdate(
   { update, oldHpValue, hpValue }: ReturnType<typeof buildStatUpdate>,
   extra: Record<string, unknown> = {}
 ): Promise<void> {
-  await actor.update({ ...update, ...extra });
+  // Skip re-rendering the sheet after the max/stat-only update: rendering it
+  // here would briefly show the old HP value against the *new* max (a visual
+  // drop that reads as damage) right before the value update below corrects
+  // it a moment later (reading as a heal). Wound-tracking modules still see
+  // both updates - and their isolated diffs - since hooks fire either way;
+  // only the sheet's own render is deferred to the settled final state.
+  await actor.update(
+    { ...update, ...extra },
+    { render: hpValue === oldHpValue }
+  );
   if (hpValue !== oldHpValue) {
+    // @ts-expect-error
     await actor.update({ "system.resources.hp.value": hpValue });
   }
 }
 
 /** Build a `system.`-prefixed update adding a form entry's block on top of current live values. */
-function addUpdateFromForm(system: any, form: FormEntry): Record<string, unknown> {
+function addUpdateFromForm(
+  system: any,
+  form: FormEntry
+): Record<string, unknown> {
   const flatForm = flattenFormStats(form);
   const update: Record<string, unknown> = {};
   for (const [path, bonus] of Object.entries(flatForm)) {
@@ -255,7 +274,8 @@ function tokenUpdateFromForm(form: FormEntry): Record<string, unknown> {
 function currentLiveToken(
   actor: SystemActor
 ): { texture?: { src?: string }; width?: number; height?: number } | null {
-  if ((actor as any).isToken && (actor as any).token) return (actor as any).token;
+  if ((actor as any).isToken && (actor as any).token)
+    return (actor as any).token;
 
   const instances = new Map<string, any>();
   for (const token of actor.getDependentTokens()) {
@@ -263,6 +283,7 @@ function currentLiveToken(
   }
   for (const scene of game.scenes?.contents ?? []) {
     for (const token of scene.tokens) {
+      // @ts-expect-error
       if (token.actorId === actor.id) instances.set(token.id, token);
     }
   }
@@ -310,7 +331,9 @@ async function applyTokenUpdate(
   for (const scene of game.scenes?.contents ?? []) {
     for (const token of scene.tokens) {
       if (token.actorId !== actor.id) continue;
+      // @ts-expect-error
       if (updated.has(token.id)) continue;
+      // @ts-expect-error
       updated.add(token.id);
       await token.update(tokenFlat).catch(() => {});
     }
@@ -362,7 +385,9 @@ export async function activateTransformation(
 }
 
 /** Revert an active transformation, restoring the stats/token captured before it activated. */
-export async function deactivateTransformation(actor: SystemActor): Promise<void> {
+export async function deactivateTransformation(
+  actor: SystemActor
+): Promise<void> {
   const system = actor.system as any;
   if (!system.formState?.activeTransformationId) return;
 
@@ -372,7 +397,9 @@ export async function deactivateTransformation(actor: SystemActor): Promise<void
 
   const mpCost = Math.ceil((Number(system.resources?.mp?.max) || 0) * 0.05);
   if (mpCost > 0 && (Number(system.resources?.mp?.value) || 0) < mpCost) {
-    ui.notifications?.warn(`Not enough MP to untransform (requires ${mpCost}).`);
+    ui.notifications?.warn(
+      `Not enough MP to untransform (requires ${mpCost}).`
+    );
     return;
   }
 
@@ -419,6 +446,7 @@ export async function activateAlternateForm(
 
   await actor.update({
     ...addUpdateFromForm(system, form),
+    // @ts-expect-error
     "system.formState.activeAlternateFormId": formId,
     "system.formState.preAlternateSnapshot": preAlternateSnapshot
   });
@@ -427,7 +455,9 @@ export async function activateAlternateForm(
 }
 
 /** Revert an active alternate form, restoring the stats captured before it activated. */
-export async function deactivateAlternateForm(actor: SystemActor): Promise<void> {
+export async function deactivateAlternateForm(
+  actor: SystemActor
+): Promise<void> {
   const system = actor.system as any;
   if (!system.formState?.activeAlternateFormId) return;
 
@@ -452,6 +482,7 @@ export async function deactivateAlternateForm(actor: SystemActor): Promise<void>
 
   await actor.update({
     ...restoreUpdate,
+    // @ts-expect-error
     "system.formState.activeAlternateFormId": "",
     "system.formState.preAlternateSnapshot": {}
   });

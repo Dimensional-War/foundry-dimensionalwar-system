@@ -42,7 +42,9 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
   ): Promise<Record<string, HTMLElement>> {
     // Create the reactive actor clone once.
     if (!this.#reactiveActor) {
-      this.#reactiveActor = reactive(this.actor.clone());
+      this.#reactiveActor = reactive(
+        JSON.parse(JSON.stringify(this.actor.clone()))
+      );
     }
 
     const container = document.createElement("div");
@@ -75,19 +77,26 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
             return;
           }
 
-          // Extract reactive values directly before serialization
-          const newActorData = {
+          // Diff plain data for just the fields we track (name/img/type/
+          // system/prototypeToken), using Foundry's own toObject() rather
+          // than JSON.stringify(actor), which would serialize the entire
+          // Actor document including items and effects on every mutation.
+          const oldActorPlain = {
+            _id: this.actor._id,
+            name: this.actor.name,
+            type: this.actor.type,
+            img: this.actor.img,
+            system: (this.actor.system as any).toObject(),
+            prototypeToken: this.actor.prototypeToken.toObject()
+          };
+          const newActorPlain = {
             _id: this.#reactiveActor!._id,
             name: this.#reactiveActor!.name,
             type: this.#reactiveActor!.type,
             img: this.#reactiveActor!.img,
-            system: { ...this.#reactiveActor!.system },
-            prototypeToken: { ...this.#reactiveActor!.prototypeToken }
+            system: this.#reactiveActor!.system,
+            prototypeToken: this.#reactiveActor!.prototypeToken
           };
-
-          const oldActorPlain = JSON.parse(JSON.stringify(this.actor));
-          const newActorPlain = JSON.parse(JSON.stringify(newActorData));
-
           const diff = foundry.utils.diffObject(oldActorPlain, newActorPlain, {
             deletionKeys: true
           }) as any;
@@ -133,6 +142,7 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
                 if (!token?.id || updated.has(token.id)) continue;
                 updated.add(token.id);
                 if (token.texture.src !== newImg) {
+                  // @ts-expect-error
                   await token.update({ "texture.src": newImg }).catch(() => {});
                 }
               }
@@ -144,10 +154,14 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
             // haven't registered as dependents, so also sweep every scene.
             for (const scene of game.scenes?.contents ?? []) {
               for (const token of scene.tokens) {
-                if (token.actorId !== this.actor.id || !token.actorLink) continue;
+                if (token.actorId !== this.actor.id || !token.actorLink)
+                  continue;
+                // @ts-expect-error
                 if (updated.has(token.id)) continue;
+                // @ts-expect-error
                 updated.add(token.id);
                 if (token.texture.src !== newImg) {
+                  // @ts-expect-error
                   await token.update({ "texture.src": newImg }).catch(() => {});
                 }
               }
@@ -181,6 +195,7 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
           // future-placed tokens (and form snapshot/restore, which reads
           // prototypeToken.texture.src) don't fall out of sync with it.
           if (cleanDiff.img && !("prototypeToken.texture.src" in updateData)) {
+            // @ts-expect-error
             updateData["prototypeToken.texture.src"] = this.#reactiveActor!.img;
           }
 
@@ -247,18 +262,23 @@ export abstract class DwBaseSheet extends ActorSheetV2 {
       this.#reactiveActor!.type = this.actor.type;
 
       // Deep update system data
-      const freshSystem = JSON.parse(
-        JSON.stringify((this.actor as SystemActor).system)
-      ) as Record<string, unknown>;
+      const freshSystem = (this.actor.system as any).toObject() as Record<
+        string,
+        unknown
+      >;
       for (const key of Object.keys(freshSystem)) {
         (this.#reactiveActor!.system as Record<string, unknown>)[key] =
           freshSystem[key];
       }
 
       // Update prototypeToken
-      const freshToken = JSON.parse(JSON.stringify(this.actor.prototypeToken));
+      const freshToken = this.actor.prototypeToken.toObject() as Record<
+        string,
+        unknown
+      >;
       for (const key of Object.keys(freshToken)) {
-        (this.#reactiveActor!.prototypeToken as any)[key] = freshToken[key];
+        (this.#reactiveActor!.prototypeToken as Record<string, unknown>)[key] =
+          freshToken[key];
       }
     };
 
