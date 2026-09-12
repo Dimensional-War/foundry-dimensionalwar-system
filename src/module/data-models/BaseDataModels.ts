@@ -653,6 +653,28 @@ export class ActorDataModel<
   static override defineSchema(): foundry.data.fields.DataSchema {
     return actorSchema();
   }
+
+  /**
+   * Older custom rolls stored the flat bonus separately from the dice
+   * formula. Fold any leftover bonusNumber into the formula string so the
+   * Rolls tab only shows a single combined formula field going forward.
+   */
+  static override migrateData(source: Record<string, unknown>) {
+    const rolls = source.rolls;
+    if (Array.isArray(rolls)) {
+      for (const entry of rolls as Record<string, unknown>[]) {
+        const bonusNumber = entry.bonusNumber;
+        if (typeof bonusNumber !== "number" || !bonusNumber) continue;
+        const bonusFormula =
+          typeof entry.bonusFormula === "string" && entry.bonusFormula.trim()
+            ? entry.bonusFormula.trim()
+            : "1d20";
+        entry.bonusFormula = `${bonusFormula} ${bonusNumber >= 0 ? "+" : "-"} ${Math.abs(bonusNumber)}`;
+        entry.bonusNumber = 0;
+      }
+    }
+    return super.migrateData(source);
+  }
 }
 
 const characterSchema = () => ({

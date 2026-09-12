@@ -67,12 +67,10 @@ import CustomsTab from "./CustomsTab.vue";
 import RollsTab from "./RollsTab.vue";
 import FormsTab from "./FormsTab.vue";
 import { SystemActor } from "~/module/documents.ts";
-import type { BaseData } from "../../types/base-data";
 
 const actor = inject<SystemActor>("actor")!;
 const reactiveActor = inject<SystemActor>("reactiveActor")!;
 const sheet = inject<{ actor: Actor; render: () => void }>("sheet")!;
-const reactiveSystem = inject<BaseData.DwSystem>("reactiveSystem")!;
 
 // Initialize from stored preference or default to "status"
 const activeTab = ref(
@@ -163,24 +161,7 @@ onMounted(() => {
   if (!validTabIds.includes(activeTab.value)) {
     activeTab.value = "status";
   }
-
-  migrateCustomRollBonuses();
 });
-
-// Older custom rolls stored the flat bonus separately from the dice formula.
-// Fold any leftover bonusNumber into the formula string so Rolls tab only
-// shows a single combined formula field going forward.
-function migrateCustomRollBonuses() {
-  const rolls = reactiveSystem.rolls as BaseData.RollEntry[] | undefined;
-  if (!rolls?.length) return;
-
-  for (const entry of rolls) {
-    if (!entry.bonusNumber) continue;
-    const base = entry.bonusFormula?.trim() || "1d20";
-    entry.bonusFormula = `${base} ${entry.bonusNumber >= 0 ? "+" : "-"} ${Math.abs(entry.bonusNumber)}`;
-    entry.bonusNumber = 0;
-  }
-}
 
 // Save active tab preference when it changes
 watch(activeTab, newTab => {
