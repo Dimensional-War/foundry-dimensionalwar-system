@@ -1,11 +1,21 @@
 <template>
   <div class="mb-4 border p-3 rounded">
-    <div class="flex justify-between items-center mb-2">
-      <input
-        type="text"
-        class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-1/2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        v-model="form.name"
-      />
+    <div class="flex justify-between items-center" :class="open ? 'mb-2' : ''">
+      <div class="flex items-center gap-2 w-1/2">
+        <button
+          type="button"
+          class="px-2 py-1 text-gray-600 hover:text-gray-900 shrink-0"
+          :title="open ? 'Collapse' : 'Expand'"
+          @click="open = !open"
+        >
+          {{ open ? "▼" : "▶" }}
+        </button>
+        <input
+          type="text"
+          class="px-3 py-1.5 border border-gray-600 rounded text-gray-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          v-model="form.name"
+        />
+      </div>
       <div class="flex gap-2 items-center">
         <span v-if="mpCostTooltip" class="text-xs text-gray-500">
           {{ mpCostTooltip }}
@@ -35,7 +45,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-2">
+    <div v-if="open" class="grid grid-cols-2 gap-2 mb-2">
       <div>
         <label class="block mb-1 font-medium">Token Image</label>
         <div class="flex gap-2 items-center">
@@ -85,6 +95,7 @@
       </div>
     </div>
 
+    <template v-if="open">
     <!-- Statistic fields hidden for now - not wired into anything yet -->
     <fieldset v-if="false" class="border p-2 mb-2">
       <legend class="font-bold">
@@ -346,11 +357,12 @@
         </div>
       </div>
     </fieldset>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from "vue";
+import { computed, inject, ref } from "vue";
 import { ELEMENT_CHOICES as elementChoices } from "~/module/utils/elements.ts";
 
 interface LiveSystem {
@@ -422,6 +434,8 @@ defineEmits<{
 }>();
 
 const system = inject<LiveSystem>("reactiveSystem")!;
+
+const open = ref(props.active ?? false);
 
 // Preview what the "Auto" resolution would actually produce right now
 // (same math as forms.ts's scaleResourceValue), so the placeholder shows a
