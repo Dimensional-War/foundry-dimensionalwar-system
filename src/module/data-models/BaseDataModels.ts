@@ -268,6 +268,19 @@ function defineSchemaFormStatBlock() {
       movement: defineSchemaSkills(["Acrobatics", "Athletics", "Reaction", "Swimming"]),
       senses: defineSchemaSkills(["Perception"])
     }),
+    movementFlags: new SchemaField({
+      hasFlight: new BooleanField({ required: true, initial: false }),
+      hasImprovedFlight: new BooleanField({ required: true, initial: false }),
+      hasParkour: new BooleanField({ required: true, initial: false }),
+      hasTeleport: new BooleanField({ required: true, initial: false }),
+      hasCrossCountry: new BooleanField({ required: true, initial: false }),
+      burrowing: new NumberField({
+        required: true,
+        integer: true,
+        min: 0,
+        initial: 0
+      })
+    }),
     bonuses: new SchemaField({
       senses: new SchemaField({
         sight: new NumberField({ required: true, initial: 0 }),

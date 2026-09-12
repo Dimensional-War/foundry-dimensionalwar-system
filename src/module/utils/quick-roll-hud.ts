@@ -7,7 +7,12 @@
 
 import { SystemActor } from "../documents";
 import { BaseData } from "../types/base-data";
-import { doRoll } from "../rolling/dice-utils";
+import {
+  doRoll,
+  executeCombinedRoll,
+  getMovementFormula,
+  type CombinedRollEntry
+} from "../rolling/dice-utils";
 import { rollPerceptionCheck } from "./token-hud";
 
 /**
@@ -263,6 +268,16 @@ export async function showQuickRollMenu(
             const item = rollItems[itemIndex];
             if (!item) return;
 
+            const combine =
+              // @ts-expect-error - Custom system namespace
+              game.settings.get("dimensionalwar", "combineGroupRolls");
+            const controlledTokens = (canvas as any)?.tokens?.controlled ?? [];
+
+            if (combine && controlledTokens.length > 1) {
+              await executeCombinedQuickRoll(item, controlledTokens);
+              return;
+            }
+
             if (item.type === "custom") {
               // Pass true to update base actor since we're outside sheet context
               await doRoll(
@@ -286,6 +301,80 @@ export async function showQuickRollMenu(
       height: "auto"
     }
   ).render(true);
+}
+
+/**
+ * Roll the clicked quick-roll item for every currently controlled token
+ * (matched by roll name/type on each actor) and post the results as a
+ * single combined chat message.
+ */
+async function executeCombinedQuickRoll(
+  item: RollItem,
+  controlledTokens: Token[]
+): Promise<void> {
+  const entries: CombinedRollEntry[] = [];
+
+  for (const token of controlledTokens) {
+    const actor = token.actor as SystemActor;
+    if (!actor) continue;
+
+    if (item.type === "custom") {
+      const rollsList =
+        (actor.system as unknown as BaseData.DwSystem).rolls ?? [];
+      const entry = rollsList.find(
+        r => (r.reasonBase || "Unnamed Roll") === item.name
+      );
+      if (!entry) continue;
+
+      if (entry.mpCost > 0) {
+        if ((actor.system as any).resources.mp.value < entry.mpCost) {
+          ui.notifications?.warn(
+            `${actor.name} does not have enough MP for ${item.name}.`
+          );
+          continue;
+        }
+        await actor.update({
+          "system.resources.mp.value":
+            (actor.system as any).resources.mp.value - entry.mpCost
+        } as any);
+      }
+
+      const formulaBase = entry.bonusFormula?.trim() || "1d20";
+      const totalBonus = entry.bonusNumber || 0;
+      const formula = totalBonus
+        ? `${formulaBase} + ${totalBonus}`
+        : formulaBase;
+
+      entries.push({ actor, tokenId: token.id, formula, label: actor.name! });
+    } else if (item.type === "movement" && item.movementType) {
+      const formula = getMovementFormula(actor, item.movementType);
+      entries.push({ actor, tokenId: token.id, formula, label: actor.name! });
+    } else if (item.type === "perception" && item.senseType) {
+      const system = actor.system as any;
+      const senseBonus = system.bonuses?.senses?.[item.senseType] ?? 0;
+      const senseLevel = system.skills?.utility?.Perception?.level ?? 0;
+      const awareness = system.statistics?.awareness?.value ?? 0;
+      const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
+      const formula =
+        totalBonus !== 0 ? `1s${senseLevel} + ${totalBonus}` : `1s${senseLevel}`;
+
+      entries.push({
+        actor,
+        tokenId: token.id,
+        formula,
+        label: actor.name!,
+        extraFlags: { senseType: item.senseType }
+      });
+    }
+  }
+
+  if (!entries.length) {
+    ui.notifications?.warn("No matching rolls found on selected tokens.");
+    return;
+  }
+
+  const groupFlagKey = item.type === "perception" ? "perceptionGroup" : "rollGroup";
+  await executeCombinedRoll(entries, item.name, groupFlagKey);
 }
 
 /**

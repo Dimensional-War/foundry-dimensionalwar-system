@@ -202,13 +202,20 @@ export class DwSkillDiceTerm extends foundry.dice.terms.Die {
 
     const cls = CONFIG.Dice.terms.s as unknown as typeof DwSkillDiceTerm;
 
+    // Parse nodes carry flavor text under `options.flavour` (Foundry's own
+    // parser naming), but RollTerm's constructor/serialization expects
+    // `options.flavor` — translate it here or the term loses its flavor.
+    const nodeOptions = (node as any).options ?? {};
+    const flavour = nodeOptions.flavour ?? nodeOptions.flavor;
+
     const data = {
       ...node,
       number,
       faces,
       skillLevel,
       modifiers,
-      class: cls.baseClassName
+      class: cls.baseClassName,
+      options: flavour ? { ...nodeOptions, flavor: flavour } : nodeOptions
     };
 
     return this.fromData(data);

@@ -14,14 +14,13 @@
             "vite/client",
             "fvtt-types"
         ],
-        "ignoreDeprecations": "6.0",
-        "baseUrl": "./",
+        "ignoreDeprecations": "5.0",
         "paths": {
             "~/*": [
-                "src/*"
+                "./src/*"
             ],
             "@/*": [
-                "src/*"
+                "./src/*"
             ]
         },
         "useDefineForClassFields": true,

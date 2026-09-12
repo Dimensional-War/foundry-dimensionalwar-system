@@ -207,7 +207,7 @@
 
     <fieldset class="border p-2 mb-2">
       <legend class="font-bold">
-        {{ bonusMode ? "Movement/Perception Bonuses" : "Movement/Perception Skills" }}
+        {{ bonusMode ? "Movement Bonuses" : "Movement Skills" }}
       </legend>
       <div class="grid grid-cols-4 gap-2">
         <div v-for="skillName in movementSkillKeys" :key="skillName">
@@ -224,6 +224,60 @@
             v-model.number="form.skills.movement[skillName].bonus"
           />
         </div>
+        <div v-if="!bonusMode">
+          <label class="block mb-1">Burrowing Level</label>
+          <input
+            type="number"
+            min="0"
+            class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
+            v-model.number="form.movementFlags.burrowing"
+          />
+        </div>
+      </div>
+      <div v-if="!bonusMode" class="flex gap-2 flex-wrap mt-2">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" v-model="form.movementFlags.hasFlight" />
+          Has Flight
+        </label>
+        <label class="flex items-center gap-2">
+          <input
+            type="checkbox"
+            v-model="form.movementFlags.hasImprovedFlight"
+          />
+          Has Improved Flight
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" v-model="form.movementFlags.hasParkour" />
+          Has Parkour
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" v-model="form.movementFlags.hasTeleport" />
+          Has Teleport
+        </label>
+        <label
+          class="flex items-center gap-2"
+          title="Ignores difficult terrain when enabled"
+        >
+          <input
+            type="checkbox"
+            v-model="form.movementFlags.hasCrossCountry"
+          />
+          Cross-Country Running
+        </label>
+      </div>
+      <div v-if="!bonusMode" class="mt-2 p-2 bg-gray-100 border rounded">
+        Walking: {{ speeds.walking }} ft | Acrobatics: {{ speeds.acrobatics }} ft
+        | Swimming: {{ speeds.swimming }} ft
+        <template v-if="speeds.flying"> | Flying: {{ speeds.flying }} ft</template>
+        <template v-if="speeds.burrowing"> | Burrow: {{ speeds.burrowing }} ft</template>
+      </div>
+    </fieldset>
+
+    <fieldset class="border p-2 mb-2">
+      <legend class="font-bold">
+        {{ bonusMode ? "Perception Bonuses" : "Perception Skills" }}
+      </legend>
+      <div class="grid grid-cols-4 gap-2">
         <div>
           <label class="block mb-1">Perception Level</label>
           <input
@@ -332,6 +386,14 @@ interface FormEntry {
     movement: Record<string, { level: number; bonus: number }>;
     senses: Record<string, { level: number; bonus: number }>;
   };
+  movementFlags: {
+    hasFlight: boolean;
+    hasImprovedFlight: boolean;
+    hasParkour: boolean;
+    hasTeleport: boolean;
+    hasCrossCountry: boolean;
+    burrowing: number;
+  };
   bonuses: {
     senses: {
       sight: number;
@@ -422,7 +484,27 @@ const statKeys = [
   "luck"
 ] as const;
 
-const movementSkillKeys = ["Acrobatics", "Athletics", "Reaction", "Swimming"] as const;
+const movementSkillKeys = ["Athletics", "Acrobatics", "Reaction", "Swimming"] as const;
+
+// Same formula as SystemActor#calculateSpeedFromLevel in documents.ts, kept
+// in sync manually since forms don't have an actor document to ask.
+function calculateSpeedFromLevel(level: number): number {
+  return 20 + Math.ceil(level / 3) * 5;
+}
+
+const speeds = computed(() => {
+  const walking = calculateSpeedFromLevel(props.form.skills.movement.Athletics?.level ?? 0);
+  const burrowingLevel = props.form.movementFlags?.burrowing ?? 0;
+  return {
+    walking,
+    acrobatics: calculateSpeedFromLevel(props.form.skills.movement.Acrobatics?.level ?? 0),
+    swimming: calculateSpeedFromLevel(props.form.skills.movement.Swimming?.level ?? 0),
+    flying: props.form.movementFlags?.hasFlight
+      ? walking * (props.form.movementFlags?.hasImprovedFlight ? 5 : 2)
+      : 0,
+    burrowing: burrowingLevel > 0 ? calculateSpeedFromLevel(burrowingLevel) : 0
+  };
+});
 
 const senseBonusKeys = ["sight", "hearing", "smell", "taste", "touch"] as const;
 

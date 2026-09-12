@@ -6,7 +6,11 @@
 
 import { type SystemActor, isSystemActor } from "../documents";
 import { ActorType } from "../enums";
-import { getSkillDieSize } from "../rolling/dice-utils";
+import {
+  getSkillDieSize,
+  executeCombinedRoll,
+  type CombinedRollEntry
+} from "../rolling/dice-utils";
 
 /**
  * Parse a skill check formula in the format: (x)s(y)(+|-|*)(z)
@@ -177,4 +181,54 @@ export async function rollPerceptionCheck(
       speaker: ChatMessage.getSpeaker({ actor })
     });
   }
+}
+
+/**
+ * Roll the same perception sense for several actors/tokens and post the
+ * results as a single combined chat message.
+ */
+export async function rollPerceptionCheckGroup(
+  items: Array<{
+    actor: SystemActor;
+    tokenId?: string;
+    senseType: "sight" | "hearing" | "smell" | "taste" | "touch";
+  }>
+): Promise<void> {
+  const entries: CombinedRollEntry[] = [];
+
+  for (const { actor, tokenId, senseType } of items) {
+    if (!actor.is_character()) continue;
+    const system = actor.system;
+
+    const senseBonus = system.bonuses?.senses?.[senseType] ?? 0;
+    const senseLevel = system.skills?.utility.Perception?.level ?? 0;
+    const awareness = system.statistics?.awareness.value ?? 0;
+    const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
+
+    const formula =
+      totalBonus !== 0 ? `1s${senseLevel} + ${totalBonus}` : `1s${senseLevel}`;
+
+    const resolvedTokenId: string | undefined =
+      tokenId ??
+      ((canvas as any)?.tokens?.placeables?.find(
+        (t: any) => t.actor?.id === actor.id
+      ) as any)?.id;
+
+    entries.push({
+      actor,
+      tokenId: resolvedTokenId,
+      formula,
+      label: `${actor.name} — ${senseType} Perception`,
+      extraFlags: { senseType }
+    });
+  }
+
+  if (!entries.length) return;
+
+  const senseLabel = items[0]?.senseType ?? "";
+  await executeCombinedRoll(
+    entries,
+    `Group ${senseLabel} Perception Check`,
+    "perceptionGroup"
+  );
 }

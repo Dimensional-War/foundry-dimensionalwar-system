@@ -7,7 +7,12 @@
 
 import { SystemActor } from "../documents";
 import { BaseData } from "../types/base-data";
-import { doRoll } from "../rolling/dice-utils";
+import {
+  doRoll,
+  executeCombinedRoll,
+  getMovementFormula,
+  type CombinedRollEntry
+} from "../rolling/dice-utils";
 
 type RollType = "custom" | "movement";
 
@@ -162,7 +167,6 @@ export async function showAggregateRollDialog(): Promise<void> {
       .roll-option:hover {
         background: #e3f2fd;
         border-color: #2196F3;
-        transform: translateX(3px);
         box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
       }
       .roll-option-header {
@@ -373,6 +377,62 @@ function buildGroupedRollListHTML(groupedRolls: GroupedRoll[]): string {
  * Execute a single roll group (all actors with the same roll)
  */
 async function executeRollGroup(group: GroupedRoll): Promise<void> {
+  // @ts-expect-error - Custom system namespace
+  const combine = game.settings.get("dimensionalwar", "combineGroupRolls");
+
+  if (combine) {
+    const entries: CombinedRollEntry[] = [];
+
+    for (const actorData of group.actors) {
+      const token = canvas.tokens?.get(actorData.tokenId);
+      const actor = token?.actor as SystemActor | undefined;
+      if (!actor) continue;
+
+      let formula: string;
+
+      if (group.rollType === "movement" && group.movementType) {
+        formula = getMovementFormula(actor, group.movementType);
+      } else {
+        const entry = (actor.system as any).rolls?.[actorData.rollIndex] as
+          | BaseData.RollEntry
+          | undefined;
+        if (!entry) continue;
+
+        if (entry.mpCost > 0) {
+          if ((actor.system as any).resources.mp.value < entry.mpCost) {
+            ui.notifications?.warn(
+              `${actorData.actorName} does not have enough MP for ${group.rollName}.`
+            );
+            continue;
+          }
+          await actor.update({
+            "system.resources.mp.value":
+              (actor.system as any).resources.mp.value - entry.mpCost
+          } as any);
+        }
+
+        const formulaBase = entry.bonusFormula?.trim() || "1d20";
+        const totalBonus = entry.bonusNumber || 0;
+        formula = totalBonus ? `${formulaBase} + ${totalBonus}` : formulaBase;
+      }
+
+      entries.push({
+        actor,
+        tokenId: actorData.tokenId,
+        formula,
+        label: actorData.actorName
+      });
+    }
+
+    if (!entries.length) return;
+
+    await executeCombinedRoll(entries, group.rollName, "rollGroup");
+    ui.notifications?.info(
+      `Rolled ${group.rollName} for ${entries.length} actor${entries.length !== 1 ? "s" : ""}`
+    );
+    return;
+  }
+
   for (const actorData of group.actors) {
     // Get actor from token ID to ensure we're using the correct instance
     const token = canvas.tokens?.get(actorData.tokenId);
@@ -448,4 +508,3 @@ async function rollMovementCheck(
     ui.notifications?.error(`Failed to roll ${movementType} movement: ${e}`);
   }
 }
-

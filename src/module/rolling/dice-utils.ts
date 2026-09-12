@@ -159,6 +159,166 @@ export function applyDiceModifier(formula: string, diceMod: number): string {
   );
 }
 
+/**
+ * One roll to be merged into a single combined chat message.
+ */
+export interface CombinedRollEntry {
+  actor: SystemActor;
+  tokenId?: string;
+  formula: string;
+  label: string;
+  /** Extra per-entry data to include in the message's group flag array (e.g. senseType). */
+  extraFlags?: Record<string, any>;
+}
+
+/**
+ * Strip characters that would break out of a formula's "[flavor]" bracket
+ * annotation or the formula syntax itself.
+ */
+function sanitizeFlavorLabel(label: string): string {
+  return label.replace(/[[\]]/g, "");
+}
+
+/**
+ * Sum a contiguous run of already-evaluated RollTerms (operators + operands),
+ * left-to-right, the same way Roll evaluates a flat term sequence.
+ */
+function sumTermGroup(terms: foundry.dice.terms.RollTerm[]): number {
+  let total = 0;
+  let operator = "+";
+  for (const term of terms) {
+    const op = (term as any).operator;
+    if (op) {
+      operator = op;
+      continue;
+    }
+    const value = (term as any).total ?? (term as any).number ?? 0;
+    switch (operator) {
+      case "-":
+        total -= value;
+        break;
+      case "*":
+        total *= value;
+        break;
+      case "/":
+        total /= value;
+        break;
+      default:
+        total += value;
+    }
+  }
+  return total;
+}
+
+/**
+ * Split an evaluated Roll's terms back into per-entry groups using the
+ * "[flavor]" label attached to each entry's final term as the group
+ * boundary, then sum each group to recover that entry's own subtotal.
+ */
+function splitTermsByFlavor(terms: foundry.dice.terms.RollTerm[]): number[] {
+  const totals: number[] = [];
+  let current: foundry.dice.terms.RollTerm[] = [];
+
+  for (let i = 0; i < terms.length; i++) {
+    const term = terms[i];
+    current.push(term);
+    const flavor = (term as any).options?.flavor ?? (term as any).flavor;
+    if (flavor) {
+      totals.push(sumTermGroup(current));
+      current = [];
+      // Skip the "+" joiner between entries; it belongs to neither group.
+      if ((terms[i + 1] as any)?.operator) i++;
+    }
+  }
+  if (current.length) totals.push(sumTermGroup(current));
+
+  return totals;
+}
+
+/**
+ * Combine several tokens' roll formulas into a single chained formula —
+ * "(x)s(y)(+/-/*)(z)[label] + (x)s(y)(+/-/*)(z)[label] + ..." — evaluate it
+ * with ONE Roll, and post ONE chat message. Each entry's own subtotal is
+ * still recovered afterwards (for flags/overlays) by splitting the evaluated
+ * terms at each entry's "[label]" marker.
+ *
+ * @param entries Rolls to combine, in formula order
+ * @param flavorTitle Flavor text/title shown on the combined message
+ * @param groupFlagKey Key under `flags.dimensionalwar` where the per-entry
+ *   results array is stored (e.g. "perceptionGroup", "rollGroup")
+ */
+export async function executeCombinedRoll(
+  entries: CombinedRollEntry[],
+  flavorTitle: string,
+  groupFlagKey: string
+): Promise<void> {
+  if (!entries.length) return;
+
+  const formula = entries
+    .map(entry => `${entry.formula}[${sanitizeFlavorLabel(entry.label)}]`)
+    .join(" + ");
+
+  let roll: Roll;
+  try {
+    roll = Roll.create(formula);
+    await roll.evaluate();
+  } catch (e) {
+    ui.notifications?.error(`Invalid combined roll formula: ${formula}`);
+    return;
+  }
+
+  const subtotals = splitTermsByFlavor(roll.terms);
+
+  await ChatMessage.create({
+    rolls: [roll],
+    flavor: flavorTitle,
+    speaker: ChatMessage.getSpeaker({ actor: entries[0].actor as any }),
+    flags: {
+      dimensionalwar: {
+        combined: true,
+        [groupFlagKey]: entries.map((entry, i) => ({
+          tokenId: entry.tokenId,
+          total: subtotals[i] ?? roll.total,
+          ...entry.extraFlags
+        }))
+      }
+    }
+  } as any);
+}
+
+/**
+ * Compute the roll formula for a movement check, using skill-notation "s" dice.
+ */
+export function getMovementFormula(
+  actor: SystemActor,
+  movementType: "Walking" | "Acrobatics" | "Swimming" | "Flying" | "Burrowing"
+): string {
+  const skillMap: Record<string, string> = {
+    Walking: "Athletics",
+    Acrobatics: "Acrobatics",
+    Swimming: "Swimming",
+    Flying: "Athletics",
+    Burrowing: "Athletics"
+  };
+  const skillName = skillMap[movementType] || "Athletics";
+
+  let skillLevel = 0;
+  let skillBonus = 0;
+  const skillCategories = ["movement", "utility", "combat"];
+  for (const category of skillCategories) {
+    const categorySkills = (actor.system as any).skills?.[category];
+    if (categorySkills?.[skillName]) {
+      skillLevel = categorySkills[skillName].level ?? 0;
+      skillBonus = categorySkills[skillName].bonus ?? 0;
+      break;
+    }
+  }
+
+  return skillBonus !== 0
+    ? `1s${skillLevel}${skillBonus >= 0 ? "+" : ""}${skillBonus}`
+    : `1s${skillLevel}`;
+}
+
 export async function doRoll(
   actor: SystemActor,
   system: BaseData.DwSystem,

@@ -18,7 +18,10 @@ import {
   EnemySheet,
   BossSheet
 } from "./module/actor/ActorSheets";
-import { rollPerceptionCheck } from "./module/utils/token-hud";
+import {
+  rollPerceptionCheck,
+  rollPerceptionCheckGroup
+} from "./module/utils/token-hud";
 import {
   showPerceptionOverlay,
   cleanupAllPerceptionOverlays,
@@ -123,6 +126,16 @@ const initHandler = () => {
     type: Number,
     default: 15,
     range: { min: 0, max: 60, step: 1 }
+  });
+
+  // @ts-expect-error - Custom system namespace
+  game.settings.register("dimensionalwar", "combineGroupRolls", {
+    name: "Combine Group Rolls",
+    hint: "When rolling for multiple selected tokens (perception, quick rolls, or the aggregate roll dialog), combine all of their rolls into a single chat message instead of posting one message per token.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
   });
 };
 
@@ -266,20 +279,32 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
         );
       }
     } else {
-      // Roll for each selected token
-      for (const token of controlledTokens) {
-        const actor = token.actor as SystemActor;
-        if (actor) {
-          await rollPerceptionCheck(
-            actor,
-            senseType.toLowerCase() as
-              | "sight"
-              | "hearing"
-              | "smell"
-              | "taste"
-              | "touch",
-            token.id
-          );
+      const resolvedSense = senseType.toLowerCase() as
+        | "sight"
+        | "hearing"
+        | "smell"
+        | "taste"
+        | "touch";
+
+      // @ts-expect-error - Custom system namespace
+      const combine = game.settings.get("dimensionalwar", "combineGroupRolls");
+
+      if (combine) {
+        const items = controlledTokens
+          .map((token: any) => ({
+            actor: token.actor as SystemActor,
+            tokenId: token.id,
+            senseType: resolvedSense
+          }))
+          .filter((item: any) => item.actor);
+        await rollPerceptionCheckGroup(items);
+      } else {
+        // Roll for each selected token
+        for (const token of controlledTokens) {
+          const actor = token.actor as SystemActor;
+          if (actor) {
+            await rollPerceptionCheck(actor, resolvedSense, token.id);
+          }
         }
       }
     }
@@ -464,7 +489,8 @@ Hooks.on("renderChatMessageHTML", (_message: any, html: HTMLElement) => {
 // ─── Chat Message: Show Perception Overlay ──────────────────────────────────────
 
 Hooks.on("createChatMessage", (message: any) => {
-  if (!message.flags?.dimensionalwar?.perceptionCheck) return;
+  const flags = message.flags?.dimensionalwar;
+  if (!flags?.perceptionCheck && !flags?.perceptionGroup) return;
 
   // ── Visibility gate ───────────────────────────────────────────────────────
   // Respect roll mode: blind rolls show only to GM, whisper rolls only to
@@ -472,16 +498,36 @@ Hooks.on("createChatMessage", (message: any) => {
   if (!isMessageVisibleToCurrentUser(message)) return;
   // ─────────────────────────────────────────────────────────────────────────
 
-  const tokenId: string | undefined = message.flags?.dimensionalwar?.tokenId;
-  const senseType: string | undefined =
-    message.flags?.dimensionalwar?.senseType;
-  if (!tokenId || !senseType) return;
-
   const rolls: any[] = message.rolls ?? [];
   if (!rolls.length) return;
-  const total: number = rolls[0]?.total ?? 0;
+
+  // Single-token perception message (flags.tokenId/senseType) or a combined
+  // group message (flags.perceptionGroup: [{tokenId, senseType, total}]).
+  const overlayEntries: Array<{
+    tokenId: string;
+    senseType: string;
+    total: number;
+  }> = flags.perceptionGroup
+    ? flags.perceptionGroup.filter((e: any) => e?.tokenId && e?.senseType)
+    : flags.tokenId && flags.senseType
+      ? [
+          {
+            tokenId: flags.tokenId,
+            senseType: flags.senseType,
+            total: rolls[0]?.total ?? 0
+          }
+        ]
+      : [];
+
+  if (!overlayEntries.length) return;
 
   const durationMs = 8000; // 8 seconds default
+
+  const showAll = () => {
+    for (const entry of overlayEntries) {
+      showPerceptionOverlay(entry.tokenId, entry.total, entry.senseType, durationMs);
+    }
+  };
 
   // If Dice So Nice is active it will fire diceSoNiceRollComplete after the
   // animation finishes. Register a listener so the overlay appears only after
@@ -495,7 +541,7 @@ Hooks.on("createChatMessage", (message: any) => {
       shown = true;
       // @ts-expect-error - Dice So Nice hook not in core types
       Hooks.off("diceSoNiceRollComplete", dsnCallback);
-      showPerceptionOverlay(tokenId, total, senseType, durationMs);
+      showAll();
     };
     // @ts-expect-error - Dice So Nice hook not in core types
     Hooks.on("diceSoNiceRollComplete", dsnCallback);
@@ -504,10 +550,10 @@ Hooks.on("createChatMessage", (message: any) => {
     setTimeout(() => {
       // @ts-expect-error - Dice So Nice hook not in core types
       Hooks.off("diceSoNiceRollComplete", dsnCallback);
-      if (!shown) showPerceptionOverlay(tokenId, total, senseType, durationMs);
+      if (!shown) showAll();
     }, 4000);
   } else {
-    showPerceptionOverlay(tokenId, total, senseType, durationMs);
+    showAll();
   }
 });
 
@@ -541,6 +587,28 @@ Hooks.on(
       displayName: CONST.TOKEN_DISPLAY_MODES.HOVER,
       displayBars: CONST.TOKEN_DISPLAY_MODES.HOVER
     });
+  }
+);
+
+// ─── Token Movement Action: Toggle "Burrowing" Active Effect ────────────────
+
+/**
+ * Keep the actor's "burrow" status effect in sync with the token's
+ * movement action.
+ */
+async function syncBurrowingEffect(tokenDoc: TokenDocument): Promise<void> {
+  const actor = tokenDoc.actor as SystemActor | null;
+  if (!actor) return;
+
+  const shouldBeActive = (tokenDoc as any).movementAction === "burrow";
+  await (actor as any).toggleStatusEffect("burrow", { active: shouldBeActive });
+}
+
+Hooks.on(
+  "updateToken",
+  (tokenDoc: TokenDocument, changes: any, _options: object, _userId: string) => {
+    if (!("movementAction" in changes)) return;
+    syncBurrowingEffect(tokenDoc);
   }
 );
 

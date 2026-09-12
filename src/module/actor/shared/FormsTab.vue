@@ -104,6 +104,14 @@ interface FormEntry {
     movement: Record<string, { level: number; bonus: number }>;
     senses: Record<string, { level: number; bonus: number }>;
   };
+  movementFlags: {
+    hasFlight: boolean;
+    hasImprovedFlight: boolean;
+    hasParkour: boolean;
+    hasTeleport: boolean;
+    hasCrossCountry: boolean;
+    burrowing: number;
+  };
   bonuses: {
     senses: {
       sight: number;
@@ -173,6 +181,14 @@ function blankForm(): FormEntry {
       senses: {
         Perception: { level: 0, bonus: 0 }
       }
+    },
+    movementFlags: {
+      hasFlight: false,
+      hasImprovedFlight: false,
+      hasParkour: false,
+      hasTeleport: false,
+      hasCrossCountry: false,
+      burrowing: 0
     },
     bonuses: {
       senses: {

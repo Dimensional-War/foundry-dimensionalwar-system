@@ -27,6 +27,12 @@ const STAT_PATHS = [
   "skills.movement.Swimming.level",
   "skills.movement.Swimming.bonus",
   "skills.senses.Perception.level",
+  "movementFlags.hasFlight",
+  "movementFlags.hasImprovedFlight",
+  "movementFlags.hasParkour",
+  "movementFlags.hasTeleport",
+  "movementFlags.hasCrossCountry",
+  "movementFlags.burrowing",
   "bonuses.senses.sight",
   "bonuses.senses.hearing",
   "bonuses.senses.smell",
@@ -56,6 +62,14 @@ interface FormEntry {
   skills?: {
     movement?: Record<string, { level?: number; bonus?: number }>;
     senses?: Record<string, { level?: number; bonus?: number }>;
+  };
+  movementFlags?: {
+    hasFlight?: boolean;
+    hasImprovedFlight?: boolean;
+    hasParkour?: boolean;
+    hasTeleport?: boolean;
+    hasCrossCountry?: boolean;
+    burrowing?: number;
   };
   bonuses?: {
     senses?: {
@@ -116,6 +130,7 @@ function flattenFormStats(form: FormEntry): Record<string, unknown> {
     soak: form.soak,
     elements: form.elements,
     skills: form.skills,
+    movementFlags: form.movementFlags,
     bonuses: form.bonuses
   });
   const flat: Record<string, unknown> = {};
