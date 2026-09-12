@@ -138,11 +138,11 @@ export class VueDialog extends foundry.applications.api.ApplicationV2 {
   /**
    * Called after the application is rendered
    */
-  _onRender(
+  async _onRender(
     _context: Record<string, any>,
     _options: Record<string, any>
-  ): void {
-    super._onRender?.(_context, _options);
+  ): Promise<void> {
+    await super._onRender?.(_context, _options);
 
     // Ensure the dialog is properly centered on first render
     if (this.element && !this.element.style.left) {
@@ -179,11 +179,11 @@ export class VueDialog extends foundry.applications.api.ApplicationV2 {
   /**
    * Submit a value and close the dialog
    */
-  submit(value: any): void {
+  async submit(value: any): Promise<void> {
     if (this.#resolve) {
       this.#resolve(value);
     }
-    this.close();
+    await this.close();
   }
 
   /**

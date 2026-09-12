@@ -58,10 +58,9 @@ export declare namespace BaseData {
       braceType: "no_brace" | "brace" | "half_brace";
       unsoakable: boolean;
       damageType: "0" | "1";
-      damage: number;
+      damage: string;
     };
     soak: {
-      soak: number;
       physicalBase: number;
       magicalBase: number;
       armoredPhysical: number;

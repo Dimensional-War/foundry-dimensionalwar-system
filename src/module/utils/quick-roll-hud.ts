@@ -210,7 +210,7 @@ export async function showQuickRollMenu(
               // Pass true to update base actor since we're outside sheet context
               await doRoll(
                 actor,
-                actor.system as BaseData.DwSystem,
+                actor.system as unknown as BaseData.DwSystem,
                 item.index,
                 true
               );

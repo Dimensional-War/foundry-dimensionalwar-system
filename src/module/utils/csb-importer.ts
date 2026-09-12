@@ -179,10 +179,12 @@ function convertCSBToActor(
   // Calculate HP min (negative HP = death threshold = -(max × 3))
   const hpMin = -(maxHp * 3);
 
-  // Base actor data (let data model initialize statistics with proper schema)
-  const actorData: Partial<Actor.UpdateData> = {
+  // Base actor data (let data model initialize statistics with proper schema).
+  // Built loosely and cast at the end: fvtt-types' ArrayField/SchemaField
+  // assignment types don't resolve cleanly for a partial, hand-built import
+  // payload like this one.
+  const actorData = {
     name: csbData.name,
-    // @ts-expect-error - Custom actor type
     type: actorType,
     img: csbData.img || "icons/svg/mystery-man.svg",
     system: {
@@ -253,6 +255,7 @@ function convertCSBToActor(
       actionHistory: [],
       movementFlags: {
         hasFlight: getPropValue(props, "hasFlight", false),
+        hasImprovedFlight: getPropValue(props, "hasImprovedFlight", false),
         hasParkour: getPropValue(props, "hasParkour", false),
         hasTeleport: getPropValue(props, "hasTeleport", false),
         hasCrossCountry: false,
@@ -278,33 +281,26 @@ function convertCSBToActor(
 
     // Apply armor values to enemy soak fields (from armors object OR direct props)
     if (actorData.system) {
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.armoredPhysical = armorValues
         ? Number(armorValues.armor_psoak || 0)
         : getPropValue(props, "cur_armor_psoak", 0);
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.armoredMagical = armorValues
         ? Number(armorValues.armor_msoak || 0)
         : getPropValue(props, "cur_armor_msoak", 0);
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.shield = armorValues
         ? Number(armorValues.armor_shield || 0)
         : getPropValue(props, "cur_armor_shield", 0);
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.shieldSoak = armorValues
         ? Number(armorValues.armor_shield || 0)
         : getPropValue(props, "cur_armor_shield", 0);
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.shieldHitsMax = armorValues
         ? Number(armorValues.armor_shield_hits_max || 0)
         : getPropValue(props, "cur_armor_shield_hits_max", 0);
-      // @ts-expect-error - soak exists in system data
       actorData.system.soak.shieldHitsLeft = getPropValue(
         props,
         "shield_hits_left",
         0
       );
-      // @ts-expect-error - combat exists in system data
       actorData.system.combat.emp = armorValues
         ? Boolean(armorValues.armor_emp)
         : Boolean(props.armor_emp || props.cur_armor_emp || props.emp);
@@ -336,8 +332,7 @@ function convertCSBToActor(
     actorType === ActorType.Ally ||
     actorType === ActorType.Boss
   ) {
-    // @ts-expect-error - skills exists in character actor types
-    actorData.system!.skills = {
+    (actorData.system as Record<string, unknown>).skills = {
       movement: {
         Acrobatics: {
           level: getPropValue(props, "acrobatics", 0),
@@ -396,11 +391,10 @@ function convertCSBToActor(
 
   // Add customs array for pc/ally
   if (actorType === "pc" || actorType === "ally") {
-    // @ts-expect-error - customs exists in pc/ally actor types
-    actorData.system!.customs = [];
+    (actorData.system as Record<string, unknown>).customs = [];
   }
 
-  return actorData;
+  return actorData as Partial<Actor.UpdateData>;
 }
 
 /**

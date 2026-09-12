@@ -87,9 +87,9 @@ interface FormEntry {
     hp: { max: number; current?: number | null };
     mp: { max: number; current?: number | null };
   };
-  gauges?: {
-    hasTrance?: boolean;
-    hasLimitBreak?: boolean;
+  gauges: {
+    hasTrance: boolean;
+    hasLimitBreak: boolean;
     trance?: number | null;
     limitBreak?: number | null;
   };
