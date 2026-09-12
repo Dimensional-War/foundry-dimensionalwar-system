@@ -99,7 +99,9 @@ const initHandler = () => {
   CONFIG.Dice.termTypes.DwSkillDiceTerm = DwSkillDiceTerm;
 
   // Load shared roll card template (used by kefka-sync module for dice display)
-  foundry.applications.handlebars.loadTemplates(["systems/dimensionalwar/templates/roll.hbs"]);
+  foundry.applications.handlebars.loadTemplates([
+    "systems/dimensionalwar/templates/roll.hbs"
+  ]);
 
   // Register game settings
   // @ts-expect-error - Custom system namespace
@@ -259,7 +261,8 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
             | "hearing"
             | "smell"
             | "taste"
-            | "touch"
+            | "touch",
+          (this.object as any)?.id
         );
       }
     } else {
@@ -274,7 +277,8 @@ class DwTokenHUD extends foundry.applications.hud.TokenHUD {
               | "hearing"
               | "smell"
               | "taste"
-              | "touch"
+              | "touch",
+            token.id
           );
         }
       }
@@ -371,6 +375,9 @@ Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
     leftCol.appendChild(quickRollsBtn);
   }
 
+  const paletteContainer = document.createElement("div");
+  paletteContainer.classList.add("col", "left");
+
   // Create perception palette with proper structure
   const palette = document.createElement("div");
   palette.classList.add("palette", "palette-perception");
@@ -392,9 +399,11 @@ Hooks.on("renderTokenHUD", (_hud: any, html: HTMLElement, data: any) => {
   // Insert palette as a sibling to the columns (at HUD root level)
   const hudElement = html.querySelector("#token-hud-hud");
   if (hudElement) {
-    hudElement.appendChild(palette);
+    paletteContainer.appendChild(palette);
+    hudElement.appendChild(paletteContainer);
   } else {
-    html.appendChild(palette);
+    paletteContainer.appendChild(palette);
+    html.appendChild(paletteContainer);
   }
 });
 

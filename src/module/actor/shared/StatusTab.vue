@@ -625,14 +625,17 @@ const formButtons = computed<FormButton[]>(() => {
   return [...transformationButtons, ...alternateFormButtons];
 });
 
-// Rolls tagged with a transformation's id only show while that transformation
-// is active; untagged rolls always show. Alternate forms don't filter rolls.
+// Untagged rolls are Base Form Only and only show while no transformation is
+// active. Rolls tagged with a transformation's id only show while that
+// transformation is active. Alternate forms don't filter rolls.
 const visibleRolls = computed(() => {
   const activeTransformationId = system.formState?.activeTransformationId;
   return (system.rolls ?? [])
     .map((roll, index) => ({ roll, index }))
-    .filter(
-      ({ roll }) => !roll.formId || roll.formId === activeTransformationId
+    .filter(({ roll }) =>
+      roll.formId
+        ? roll.formId === activeTransformationId
+        : !activeTransformationId
     );
 });
 

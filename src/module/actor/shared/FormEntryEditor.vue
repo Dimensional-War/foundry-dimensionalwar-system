@@ -231,11 +231,13 @@
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
             v-model.number="form.skills.senses.Perception.level"
           />
-          <label class="block mb-1">Perception Bonus</label>
+        </div>
+        <div v-for="senseKey in senseBonusKeys" :key="senseKey">
+          <label class="block mb-1 capitalize">{{ senseKey }} Bonus</label>
           <input
             type="number"
             class="px-2 py-1 border border-gray-600 rounded text-gray-700 w-full"
-            v-model.number="form.skills.senses.Perception.bonus"
+            v-model.number="form.bonuses.senses[senseKey]"
           />
         </div>
       </div>
@@ -330,6 +332,15 @@ interface FormEntry {
     movement: Record<string, { level: number; bonus: number }>;
     senses: Record<string, { level: number; bonus: number }>;
   };
+  bonuses: {
+    senses: {
+      sight: number;
+      hearing: number;
+      smell: number;
+      taste: number;
+      touch: number;
+    };
+  };
 }
 
 // `form` is the live entry from reactiveSystem (not a copy), so v-model
@@ -412,6 +423,8 @@ const statKeys = [
 ] as const;
 
 const movementSkillKeys = ["Acrobatics", "Athletics", "Reaction", "Swimming"] as const;
+
+const senseBonusKeys = ["sight", "hearing", "smell", "taste", "touch"] as const;
 
 // Text-bound (not v-model.number) so the field can be left blank to mean
 // "no override, auto-scale by %" (stored as null) rather than 0.

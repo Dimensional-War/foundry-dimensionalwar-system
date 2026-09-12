@@ -104,6 +104,15 @@ interface FormEntry {
     movement: Record<string, { level: number; bonus: number }>;
     senses: Record<string, { level: number; bonus: number }>;
   };
+  bonuses: {
+    senses: {
+      sight: number;
+      hearing: number;
+      smell: number;
+      taste: number;
+      touch: number;
+    };
+  };
 }
 
 interface SystemData {
@@ -163,6 +172,15 @@ function blankForm(): FormEntry {
       },
       senses: {
         Perception: { level: 0, bonus: 0 }
+      }
+    },
+    bonuses: {
+      senses: {
+        sight: 0,
+        hearing: 0,
+        smell: 0,
+        taste: 0,
+        touch: 0
       }
     }
   };

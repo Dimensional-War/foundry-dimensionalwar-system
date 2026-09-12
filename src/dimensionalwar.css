@@ -40,10 +40,6 @@
             background-color: rgba(0, 0, 0, 0.15);
         }
     }
-
-    .palette-perception {
-        left: -90px;
-    }
 }
 
 @layer components {

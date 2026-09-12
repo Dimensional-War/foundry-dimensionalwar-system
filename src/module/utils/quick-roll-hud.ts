@@ -8,6 +8,7 @@
 import { SystemActor } from "../documents";
 import { BaseData } from "../types/base-data";
 import { doRoll } from "../rolling/dice-utils";
+import { rollPerceptionCheck } from "./token-hud";
 
 /**
  * Initialize quick roll HUD (no longer needed - handled by DwTokenHUD._onRender)
@@ -19,13 +20,14 @@ export function initializeQuickRollHUD(): void {
 }
 
 interface RollItem {
-  type: "custom" | "movement";
+  type: "custom" | "movement" | "perception";
   name: string;
   category: string;
   formula: string;
   mpCost: number;
   index: number;
   movementType?: "Walking" | "Acrobatics" | "Swimming" | "Flying" | "Burrowing";
+  senseType?: "sight" | "hearing" | "smell" | "taste" | "touch";
 }
 
 /**
@@ -36,24 +38,39 @@ export async function showQuickRollMenu(
   actor: SystemActor,
   rolls: BaseData.RollEntry[]
 ): Promise<void> {
-  // Collect custom rolls
-  const rollItems: RollItem[] = rolls.map((roll, idx) => {
-    const formula = roll.bonusFormula || "1d20";
-    const bonus = roll.bonusNumber || 0;
-    const fullFormula =
-      bonus !== 0 ? `${formula}${bonus >= 0 ? "+" : ""}${bonus}` : formula;
+  // Collect custom rolls, filtering by transformation: untagged rolls are
+  // Base Form Only and only show while no transformation is active; rolls
+  // tagged with a transformation's id only show while that transformation
+  // is active.
+  const activeTransformationId = (actor.system as any).formState
+    ?.activeTransformationId;
+  const rollItems: RollItem[] = rolls
+    .map((roll, idx) => ({ roll, idx }))
+    .filter(({ roll }) =>
+      roll.formId
+        ? roll.formId === activeTransformationId
+        : !activeTransformationId
+    )
+    .map(({ roll, idx }) => {
+      const formula = roll.bonusFormula || "1d20";
+      const bonus = roll.bonusNumber || 0;
+      const fullFormula =
+        bonus !== 0 ? `${formula}${bonus >= 0 ? "+" : ""}${bonus}` : formula;
 
-    return {
-      type: "custom" as const,
-      name: roll.reasonBase || "Unnamed Roll",
-      category: roll.category,
-      formula: fullFormula,
-      mpCost: roll.mpCost || 0,
-      index: idx
-    };
-  });
+      return {
+        type: "custom" as const,
+        name: roll.reasonBase || "Unnamed Roll",
+        category: roll.category,
+        formula: fullFormula,
+        mpCost: roll.mpCost || 0,
+        index: idx
+      };
+    });
 
-  // Add movement rolls
+  // Add movement rolls. Walking/Acrobatics/Swimming are always available;
+  // Flying/Burrowing depend on movementFlags, which can change with the
+  // actor's active transformation, and are gated the same way as the sheet.
+  const movementFlags = (actor.system as any).movementFlags;
   const movements: Array<{
     type: "Walking" | "Acrobatics" | "Swimming" | "Flying" | "Burrowing";
     skillName: string;
@@ -61,8 +78,13 @@ export async function showQuickRollMenu(
     { type: "Walking", skillName: "Athletics" },
     { type: "Acrobatics", skillName: "Acrobatics" },
     { type: "Swimming", skillName: "Swimming" },
-    { type: "Flying", skillName: "Athletics" },
-    { type: "Burrowing", skillName: "Athletics" }
+    ...(movementFlags?.hasFlight && (actor as any).flyingSpeed > 0
+      ? [{ type: "Flying" as const, skillName: "Athletics" }]
+      : []),
+    ...((movementFlags?.burrowing ?? 0) > 0 &&
+    (actor as any).burrowingSpeed > 0
+      ? [{ type: "Burrowing" as const, skillName: "Athletics" }]
+      : [])
   ];
 
   movements.forEach(({ type, skillName }) => {
@@ -97,6 +119,42 @@ export async function showQuickRollMenu(
     });
   });
 
+  // Add perception rolls. Skill level/bonus are read live off the actor, so
+  // these already reflect an active transformation's overrides.
+  const senses: Array<{
+    type: "sight" | "hearing" | "smell" | "taste" | "touch";
+    label: string;
+  }> = [
+    { type: "sight", label: "Sight" },
+    { type: "hearing", label: "Hearing" },
+    { type: "smell", label: "Smell" },
+    { type: "taste", label: "Taste" },
+    { type: "touch", label: "Touch" }
+  ];
+
+  const senseLevel = (actor.system as any).skills?.utility?.Perception?.level ?? 0;
+
+  senses.forEach(({ type, label }) => {
+    const senseBonus = (actor.system as any).bonuses?.senses?.[type] ?? 0;
+    const awareness = (actor.system as any).statistics?.awareness?.value ?? 0;
+    const totalBonus = senseLevel === 0 ? 0 : awareness + senseBonus;
+
+    const formula =
+      totalBonus !== 0
+        ? `1s${senseLevel}${totalBonus >= 0 ? "+" : ""}${totalBonus}`
+        : `1s${senseLevel}`;
+
+    rollItems.push({
+      type: "perception" as const,
+      name: `${label} Perception`,
+      category: "Perception",
+      formula,
+      mpCost: 0,
+      index: -1,
+      senseType: type
+    });
+  });
+
   // Show as a dialog instead of context menu (better formatting)
   const html = `
     <style>
@@ -119,7 +177,6 @@ export async function showQuickRollMenu(
       .quick-roll-item:hover {
         background: #e3f2fd;
         border-color: #2196F3;
-        transform: translateX(3px);
       }
       .quick-roll-icon {
         font-size: 1.2em;
@@ -217,6 +274,8 @@ export async function showQuickRollMenu(
             } else if (item.type === "movement" && item.movementType) {
               // Roll movement check
               await rollMovementCheck(actor, item.movementType);
+            } else if (item.type === "perception" && item.senseType) {
+              await rollPerceptionCheck(actor, item.senseType, token.id);
             }
           });
         });

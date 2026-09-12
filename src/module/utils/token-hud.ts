@@ -113,7 +113,8 @@ export async function rollSkillCheck(
  */
 export async function rollPerceptionCheck(
   actor: SystemActor,
-  senseType: "sight" | "hearing" | "smell" | "taste" | "touch"
+  senseType: "sight" | "hearing" | "smell" | "taste" | "touch",
+  tokenId?: string
 ): Promise<void> {
   if (actor.is_character()) {
     const system = actor.system;
@@ -144,11 +145,13 @@ export async function rollPerceptionCheck(
     const roll = await Roll.create(formula);
     const evaluated = await roll.evaluate();
 
-    // Find the token for overlay
-    const tokenObj = (canvas as any)?.tokens?.placeables?.find(
-      (t: any) => t.actor?.id === actor.id
-    ) as any;
-    const tokenId: string | undefined = tokenObj?.id;
+    // Prefer the token this check was rolled from; fall back to the first
+    // placed token for the actor (e.g. when called without a specific token).
+    const resolvedTokenId: string | undefined =
+      tokenId ??
+      ((canvas as any)?.tokens?.placeables?.find(
+        (t: any) => t.actor?.id === actor.id
+      ) as any)?.id;
 
     // Build flavor text with optional bonus details
     let flavor = `${senseType} Perception Skill Check`;
@@ -164,7 +167,7 @@ export async function rollPerceptionCheck(
         dimensionalwar: {
           perceptionCheck: true,
           skillCheck: true,
-          tokenId,
+          tokenId: resolvedTokenId,
           senseType,
           skillName: `${senseType} Perception`,
           skillLevel: senseLevel,

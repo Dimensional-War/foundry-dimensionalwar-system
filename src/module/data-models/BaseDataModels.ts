@@ -267,6 +267,15 @@ function defineSchemaFormStatBlock() {
     skills: new SchemaField({
       movement: defineSchemaSkills(["Acrobatics", "Athletics", "Reaction", "Swimming"]),
       senses: defineSchemaSkills(["Perception"])
+    }),
+    bonuses: new SchemaField({
+      senses: new SchemaField({
+        sight: new NumberField({ required: true, initial: 0 }),
+        hearing: new NumberField({ required: true, initial: 0 }),
+        smell: new NumberField({ required: true, initial: 0 }),
+        taste: new NumberField({ required: true, initial: 0 }),
+        touch: new NumberField({ required: true, initial: 0 })
+      })
     })
   };
 }

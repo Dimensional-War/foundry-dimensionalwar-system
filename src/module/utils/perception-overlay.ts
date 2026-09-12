@@ -284,6 +284,26 @@ function buildOverlayContainer(
   return container;
 }
 
+const FA_FONT = `900 ${ICON_SIZE}px "Font Awesome 7 Pro"`;
+
+/**
+ * Kick off (and cache) loading the Font Awesome Pro solid webfont at the
+ * weight/size the overlay uses. PIXI.Text rasterizes onto a <canvas> using
+ * the CSS font string immediately when the Text is constructed - unlike a
+ * regular DOM element, it does NOT wait for the browser to finish fetching
+ * a webfont it hasn't used yet, so the very first icon (before anything
+ * else on the page has rendered FA Pro solid at this size) draws with the
+ * fallback font and shows as a tofu box. Awaiting document.fonts.load makes
+ * sure the glyph data is actually available before we draw with it.
+ */
+let faFontLoad: Promise<unknown> | null = null;
+function ensureFontAwesomeLoaded(): Promise<unknown> {
+  if (!faFontLoad) {
+    faFontLoad = document.fonts?.load(FA_FONT).catch(() => {}) ?? Promise.resolve();
+  }
+  return faFontLoad;
+}
+
 /**
  * Build the appropriate icon based on the sense type using Font Awesome Pro
  */
@@ -302,11 +322,21 @@ function buildSenseIcon(senseType: string): PIXI.Text {
   const unicode = iconMap[senseType.toLowerCase()] ?? "\uf06e"; // Default to eye
 
   const icon = new PIXI.Text(unicode, {
-    fontFamily: "Font Awesome 6 Pro",
+    fontFamily: "Font Awesome 7 Pro",
     fontSize: ICON_SIZE,
     fill: color,
     fontWeight: "900" // Solid style
   });
+
+  // If the webfont wasn't already loaded/cached, re-draw once it is so the
+  // very first overlay of a session doesn't get stuck showing a tofu box.
+  if (!document.fonts?.check(FA_FONT)) {
+    ensureFontAwesomeLoaded().then(() => {
+      if (icon.destroyed) return;
+      (icon as any).dirty = true;
+      icon.updateText(false);
+    });
+  }
 
   return icon;
 }
